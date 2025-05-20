@@ -1,10 +1,11 @@
-// theme/colors.ts
 const colors = {
-  primary: '#6C2DC7',  // Purple
-  background: '#FFFFFF',
-  text: '#1A1A1A',
-  muted: '#888',
-  accent: '#B19CD9',
+  primary: '#A259FF',           // Purple
+  background: '#121212',        // Dark background
+  card: '#1E1E1E',              // Slightly lighter cards
+  text: '#FFFFFF',
+  muted: '#999999',
+  border: '#272727',
+  accent: '#D0BCFF',
 };
 
 export default colors;
