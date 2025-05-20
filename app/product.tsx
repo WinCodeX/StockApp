@@ -35,6 +35,21 @@ export default function ProductsScreen() {
           </Card>
         )}
       />
+
+<FAB
+  icon="plus"
+  style={{
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    backgroundColor: colors.primary,
+  }}
+  color="white"
+  onPress={() => {
+    // TODO: Show Add Stock Modal or navigate to add-stock screen
+    console.log('FAB pressed – trigger Add Stock modal');
+  }}
+/>
     </View>
   );
 }
