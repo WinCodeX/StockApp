@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import api from '../lib/api';
 import colors from '../theme/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SalesScreen() {
   const [sales, setSales] = useState([]);
