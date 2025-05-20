@@ -25,7 +25,7 @@ export default function TabLayout() {
           backgroundColor: '#101e2f',
           borderRadius: 24,
           borderTopWidth: 0,
-          paddingBottom: 4,
+          paddingBottom: 10,
           paddingTop: 4,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 6 },
