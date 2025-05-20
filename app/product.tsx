@@ -56,7 +56,7 @@ export default function ProductsScreen() {
   if (loading) return <ActivityIndicator style={{ marginTop: 50 }} color={colors.primary} />;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Products</Text>
       <FlatList
         data={products}
@@ -105,7 +105,7 @@ export default function ProductsScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
