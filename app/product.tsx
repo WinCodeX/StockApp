@@ -1,14 +1,20 @@
 // app/products.tsx
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  View, FlatList, Text, ActivityIndicator, StyleSheet, Modal,
-  Pressable, TextInput, Alert
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Card, Button, FAB } from 'react-native-paper';
+import { Button, Card, FAB } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import colors from '../theme/colors';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
