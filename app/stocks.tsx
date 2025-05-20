@@ -4,6 +4,7 @@ import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-nativ
 import { useSearchParams } from 'expo-router';
 import api from '../lib/api';
 import colors from '../theme/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function StocksScreen() {
   const { id } = useSearchParams();
