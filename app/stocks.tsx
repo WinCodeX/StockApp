@@ -23,7 +23,7 @@ export default function StocksScreen() {
   if (loading) return <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} />;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Stock Entries</Text>
       <FlatList
         data={stocks}
@@ -35,7 +35,7 @@ export default function StocksScreen() {
           </View>
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
