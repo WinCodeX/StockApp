@@ -48,7 +48,7 @@ const confirmLogout = async () => { await SecureStore.deleteItemAsync('auth_toke
 
 if (loading) { return ( <View style={styles.loader}> <ActivityIndicator size="large" color="#bd93f9" /> </View> ); }
 
-return ( <ScrollView style={styles.container}> <View style={styles.identityCard}> <View style={styles.identityLeft}> <Text style={styles.userName}>{userName || 'No name'}</Text> <Text style={styles.accountType}>StockApp Account</Text> </View> <TouchableOpacity onPress={pickAndUploadAvatar}> <Avatar.Image size={60} source={avatarUri ? { uri: avatarUri } : require('../../assets/images/avatar-placeholder.png')} /> </TouchableOpacity> </View>
+return ( <ScrollView style={styles.container}> <View style={styles.identityCard}> <View style={styles.identityLeft}> <Text style={styles.userName}>{userName || 'No name'}</Text> <Text style={styles.accountType}>StockApp Account</Text> </View> <TouchableOpacity onPress={pickAndUploadAvatar}> <Avatar.Image size={60} source={avatarUri ? { uri: avatarUri } : require('../assets/images/avatar-placeholder.png')} /> </TouchableOpacity> </View>
 
 <View style={styles.logoutCard}>
     <TouchableOpacity style={styles.logoutButton} onPress={() => setShowLogoutConfirm(true)}>
