@@ -2,9 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Card, Button } from 'react-native-paper';
+import { Card, Button, FAB } from 'react-native-paper';
 import api from '../lib/api';
 import colors from '../theme/colors';
+
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
