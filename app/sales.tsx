@@ -18,7 +18,7 @@ export default function SalesScreen() {
   if (loading) return <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} />;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Sales</Text>
       <FlatList
         data={sales}
@@ -31,7 +31,7 @@ export default function SalesScreen() {
           </View>
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
