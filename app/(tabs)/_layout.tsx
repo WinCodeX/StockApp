@@ -1,63 +1,71 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import colors from '../../theme/colors';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
-  screenOptions={{
-    tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-    headerShown: false,
-    tabBarButton: HapticTab,
-    tabBarBackground: TabBarBackground,
-    tabBarStyle: {
-      position: 'absolute',
-      backgroundColor: '#fff',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      height: 70,
-      paddingBottom: 10,
-      paddingTop: 10,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      elevation: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-    },
-  }}
->
-  <Tabs.Screen
-    name="index"
-    options={{
-      title: 'Home',
-      tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-    }}
-  />
-  <Tabs.Screen
-    name="products"
-    options={{
-      title: 'Products',
-      tabBarIcon: ({ color }) => <IconSymbol size={28} name="cube.box.fill" color={color} />,
-    }}
-  />
-  <Tabs.Screen
-    name="sales"
-    options={{
-      title: 'Sales',
-      tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
-    }}
-  />
-</Tabs>
+      screenOptions={({ route }) => ({
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          marginTop: -4,
+          fontWeight: '500',
+        },
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: '#6272a4',
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 20,
+          left: 20,
+          right: 20,
+          elevation: 10,
+          backgroundColor: '#101e2f',
+          borderRadius: 24,
+          borderTopWidth: 0,
+          paddingBottom: 4,
+          paddingTop: 4,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.3,
+          shadowRadius: 10,
+        },
+        tabBarItemStyle: {
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+        tabBarIcon: ({ color, focused }) => {
+          let iconName: keyof typeof Ionicons.glyphMap = 'ellipse-outline';
+
+          switch (route.name) {
+            case 'index':
+              iconName = focused ? 'home' : 'home-outline';
+              break;
+            case 'products':
+              iconName = focused ? 'cube' : 'cube-outline';
+              break;
+            case 'sales':
+              iconName = focused ? 'trending-up' : 'trending-up-outline';
+              break;
+            case 'search':
+              iconName = focused ? 'search' : 'search-outline';
+              break;
+            case 'account':
+              iconName = focused ? 'person' : 'person-outline';
+              break;
+          }
+
+          return <Ionicons name={iconName} size={22} color={color} />;
+        },
+      })}
+    >
+      <Tabs.Screen name="index" options={{ title: 'Home' }} />
+      <Tabs.Screen name="products" options={{ title: 'Products' }} />
+      <Tabs.Screen name="sales" options={{ title: 'Sales' }} />
+      <Tabs.Screen name="search" options={{ title: 'Search' }} />
+      <Tabs.Screen name="account" options={{ title: 'Account' }} />
+    </Tabs>
   );
 }
