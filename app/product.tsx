@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { Card, Button, FAB } from 'react-native-paper';
 import api from '../lib/api';
 import colors from '../theme/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
