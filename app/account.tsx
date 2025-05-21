@@ -21,7 +21,7 @@ const loadProfile = useCallback(() => {
       const user = res.data.data.attributes;
 
 setUserName(user.username || '');
-setAvatarUri(user.avatar || null);
+setAvatarUri(user.avatar_url || null);
 
 console.log('User profile data:', res.data.data.attributes);
 
