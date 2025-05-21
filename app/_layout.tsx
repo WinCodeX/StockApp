@@ -77,10 +77,10 @@ export default function RootLayout() {
 
   return (
     <>
-      <Toast config={toastConfig} />
       <PaperProvider theme={colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
         <Slot />
       </PaperProvider>
+      <Toast config={toastConfig} topOffset={50} />
     </>
   );
 }
