@@ -24,7 +24,7 @@ const token = response?.data?.token;
 
 };
 
-return ( <View style={styles.container}> <Text style={styles.title}>GGR2App Login</Text>
+return ( <View style={styles.container}> <Text style={styles.title}>StockXApp Login</Text>
 
 <TextInput
     label="Email"
