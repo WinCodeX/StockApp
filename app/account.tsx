@@ -20,10 +20,11 @@ const loadProfile = useCallback(() => {
 
       const user = res.data.data.attributes;
 
-console.log('User profile data:', res.data.data.attributes);
 
       setUserName(user.username || '');
       setAvatarUri(user.avatar_url || null);
+
+console.log('User profile data:', res.data.data.attributes);
 
     } catch (error) {
       Alert.alert('Error', 'Unable to load profile.');
