@@ -7,7 +7,27 @@ const router = useRouter(); const navigation = useNavigation();
 
 useLayoutEffect(() => { navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } }); return () => { navigation.getParent()?.setOptions({ tabBarStyle: { display: 'flex' } }); }; }, [navigation]);
 
-const loadProfile = useCallback(() => { (async () => { try { const token = await SecureStore.getItemAsync('auth_token'); const res = await api.get('/api/v1/me', { headers: { Authorization: 'Bearer ${token}'}, Accept: 'application/json', }); setUserName(res.data.username || null); setAvatarUri(res.data.avatar_url); } catch { Alert.alert('Error', 'Unable to load profile.'); } finally { setLoading(false); } })(); }, []);
+const loadProfile = useCallback(() => {
+  (async () => {
+    try {
+      const token = await SecureStore.getItemAsync('auth_token');
+      const res = await api.get('/api/v1/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      setUserName(res.data.username || null);
+      setAvatarUri(res.data.avatar || null);
+
+    } catch {
+      Alert.alert('Error', 'Unable to load profile.');
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, []);
 
 useEffect(() => { loadProfile(); }, [loadProfile]); useFocusEffect(useCallback(() => { loadProfile(); }, [loadProfile]));
 
