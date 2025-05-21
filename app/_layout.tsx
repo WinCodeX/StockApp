@@ -1,4 +1,5 @@
-// app/_layout.tsx import React, { useEffect, useState } from 'react'; import { Slot, useRouter, useSegments } from 'expo-router'; import * as SecureStore from 'expo-secure-store'; import { ActivityIndicator, View, StyleSheet } from 'react-native'; import Toast from 'react-native-toast-message'; import { Provider as PaperProvider } from 'react-native-paper'; import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'; import { useColorScheme } from 'react-native'; import toastConfig from '../lib/toastConfig';
+// app/_layout.tsx 
+import React, { useEffect, useState } from 'react'; import { Slot, useRouter, useSegments } from 'expo-router'; import * as SecureStore from 'expo-secure-store'; import { ActivityIndicator, View, StyleSheet } from 'react-native'; import Toast from 'react-native-toast-message'; import { Provider as PaperProvider } from 'react-native-paper'; import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'; import { useColorScheme } from 'react-native'; import toastConfig from '../lib/toastConfig';
 
 export default function RootLayout() { const [isAuthChecked, setAuthChecked] = useState(false); const segments = useSegments(); const router = useRouter(); const colorScheme = useColorScheme();
 
