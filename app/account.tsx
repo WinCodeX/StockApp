@@ -20,9 +20,8 @@ const loadProfile = useCallback(() => {
 
       const user = res.data.data.attributes;
 
-
-      setUserName(user.username || '');
-      setAvatarUri(user.avatar_url || null);
+setUserName(user.name || '');
+setAvatarUri(user.avatar || null);
 
 console.log('User profile data:', res.data.data.attributes);
 
