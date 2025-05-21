@@ -18,10 +18,12 @@ const loadProfile = useCallback(() => {
         },
       });
 
-      setUserName(res.data.username || null);
-      setAvatarUri(res.data.avatar || null);
+      const user = res.data.data.attributes;
 
-    } catch {
+      setUserName(user.username || '');
+      setAvatarUri(user.avatar_url || null);
+
+    } catch (error) {
       Alert.alert('Error', 'Unable to load profile.');
     } finally {
       setLoading(false);
