@@ -48,7 +48,7 @@ export default function ProductsScreen() {
     }
 
     try {
-      await api.post(`/products/${selectedProduct.id}/stocks`, {
+      await api.post(`/api/v1/products/${selectedProduct.id}/stocks`, {
         stock: { quantity: parseInt(quantity) },
       });
       Alert.alert('Success', 'Stock added successfully.');
