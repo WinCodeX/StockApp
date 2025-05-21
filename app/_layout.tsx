@@ -5,10 +5,41 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { Provider as PaperProvider } from 'react-native-paper';
-import { DarkTheme, DefaultTheme } from '@react-navigation/native';
+import { Provider as PaperProvider, MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 import { useColorScheme } from 'react-native';
 import { toastConfig } from '../lib/toastConfig';
+
+// Font config that satisfies labelLarge and others
+const fontConfig = {
+  regular: {
+    fontFamily: 'System',
+    fontWeight: 'normal',
+  },
+  medium: {
+    fontFamily: 'System',
+    fontWeight: '500',
+  },
+  bold: {
+    fontFamily: 'System',
+    fontWeight: 'bold',
+  },
+};
+
+const CustomLightTheme = {
+  ...MD3LightTheme,
+  fonts: {
+    ...MD3LightTheme.fonts,
+    ...fontConfig,
+  },
+};
+
+const CustomDarkTheme = {
+  ...MD3DarkTheme,
+  fonts: {
+    ...MD3DarkTheme.fonts,
+    ...fontConfig,
+  },
+};
 
 export default function RootLayout() {
   const [isAuthChecked, setAuthChecked] = useState(false);
@@ -47,7 +78,7 @@ export default function RootLayout() {
   return (
     <>
       <Toast config={toastConfig} />
-      <PaperProvider theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <PaperProvider theme={colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
         <Slot />
       </PaperProvider>
     </>
