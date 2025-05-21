@@ -30,7 +30,7 @@ export default function ProductsScreen() {
 
   const fetchProducts = () => {
     setLoading(true);
-    api.get('/products')
+    api.get('/api/v1/products')
       .then((res) => setProducts(res.data.data))
       .catch(console.error)
       .finally(() => setLoading(false));
