@@ -1,5 +1,3 @@
-// app/products.tsx
-
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -108,7 +106,17 @@ export default function ProductsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Products</Text>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.header}>Products</Text>
+      </View>
+
+      <View style={styles.searchContainer}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <Text style={styles.searchPlaceholder}>Search by name</Text>
+      </View>
 
       <FlatList
         data={products}
@@ -191,14 +199,41 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     padding: 16,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  backArrow: {
+    fontSize: 24,
+    color: colors.primary,
+    marginRight: 8,
+  },
   header: {
     fontSize: 22,
     fontWeight: 'bold',
     color: colors.primary,
-    marginBottom: 12,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e1e2e',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  searchIcon: {
+    fontSize: 18,
+    color: '#888',
+    marginRight: 8,
+  },
+  searchPlaceholder: {
+    color: '#888',
+    fontSize: 14,
   },
   card: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   cardContent: {
     flexDirection: 'row',
