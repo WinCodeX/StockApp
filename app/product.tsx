@@ -9,6 +9,8 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
+  TouchableOpacity,
 } from 'react-native';
 import { Button, Card, FAB } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +21,7 @@ import api from '../lib/api';
 import BottomSheetModal from '../components/BottomSheetModal';
 import CreateProductModal from '../components/CreateProductModal';
 import { createProduct } from '../lib/helpers/createProduct';
+import defaultProductImage from '../assets/images/default_product.png';
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
@@ -103,17 +106,34 @@ export default function ProductsScreen() {
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <Card style={styles.card}>
-            <Card.Title
-              title={item.attributes.name}
-              subtitle={`Price: ${item.attributes.price}`}
-            />
+            <View style={styles.cardContent}>
+              <Image
+                source={
+                  item.attributes.image_url
+                    ? { uri: item.attributes.image_url }
+                    : defaultProductImage
+                }
+                style={styles.image}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>{item.attributes.name}</Text>
+                <Text style={styles.subtitle}>Stock: {item.attributes.total_stock}</Text>
+                <Text style={styles.subtitle}>KES {item.attributes.price}</Text>
+              </View>
+              <View style={styles.counterButtons}>
+                <TouchableOpacity style={styles.counterButton}>
+                  <Text style={styles.counterText}>-</Text>
+                </TouchableOpacity>
+                <Text style={styles.counterQuantity}>0</Text>
+                <TouchableOpacity style={styles.counterButton}>
+                  <Text style={styles.counterText}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             <Card.Actions>
-              <Button onPress={() => openViewStockModal(item)}>
-                View Stock
-              </Button>
-              <Button onPress={() => openAddStockModal(item)}>
-                Add Stock
-              </Button>
+              <Button onPress={() => openViewStockModal(item)}>View Stock</Button>
+              <Button onPress={() => openAddStockModal(item)}>Add Stock</Button>
             </Card.Actions>
           </Card>
         )}
@@ -159,6 +179,47 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 12,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+  },
+  image: {
+    width: 60,
+    height: 60,
+    marginRight: 12,
+    borderRadius: 8,
+  },
+  title: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  subtitle: {
+    color: '#ccc',
+    fontSize: 14,
+  },
+  counterButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  counterButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginHorizontal: 4,
+  },
+  counterText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  counterQuantity: {
+    color: '#fff',
+    fontSize: 16,
   },
   fab: {
     position: 'absolute',
