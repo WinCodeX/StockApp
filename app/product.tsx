@@ -1,4 +1,5 @@
 // app/products.tsx
+
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -81,8 +82,8 @@ export default function ProductsScreen() {
         renderItem={({ item }) => (
           <Card style={styles.card}>
             <Card.Title
-              title={item.attributes.name}
-              subtitle={`Price: ${item.attributes.price}`}
+              title={item.name}
+              subtitle={`Price: ${item.price}`}
             />
             <Card.Actions>
               <Button onPress={() => router.push(`/stocks?id=${item.id}`)}>
@@ -115,7 +116,7 @@ export default function ProductsScreen() {
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>Add Stock</Text>
             <Text style={styles.modalLabel}>
-              Product: {selectedProduct?.attributes.name}
+              Product: {selectedProduct?.name}
             </Text>
             <TextInput
               value={quantity}
