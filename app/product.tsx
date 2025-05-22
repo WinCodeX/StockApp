@@ -7,10 +7,12 @@ import {
   View,
   Image,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import { Button, Card, FAB } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import colors from '../theme/colors';
 import { getProducts } from '../lib/helpers/getProducts';
@@ -20,6 +22,7 @@ import CreateProductModal from '../components/CreateProductModal';
 import { createProduct } from '../lib/helpers/createProduct';
 import defaultProductImage from '../assets/images/default_product.png';
 import LoaderOverlay from '../components/LoaderOverlay';
+import { searchProducts } from '../lib/helpers/searchProducts';
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
@@ -29,6 +32,7 @@ export default function ProductsScreen() {
   const [quantity, setQuantity] = useState('');
   const [modalType, setModalType] = useState<'add' | 'view'>('add');
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const router = useRouter();
 
@@ -48,6 +52,20 @@ export default function ProductsScreen() {
     }
   };
 
+  const handleSearch = async (text: string) => {
+    setSearchQuery(text);
+    if (!text) {
+      fetchProducts();
+      return;
+    }
+    try {
+      const results = await searchProducts(text);
+      setProducts(results);
+    } catch (err) {
+      Toast.show({ type: 'errorToast', text1: 'Search failed.' });
+    }
+  };
+
   const openAddStockModal = (product) => {
     setSelectedProduct(product);
     setModalType('add');
@@ -62,10 +80,7 @@ export default function ProductsScreen() {
 
   const submitStock = async () => {
     if (!quantity || isNaN(quantity)) {
-      Toast.show({
-        type: 'errorToast',
-        text1: 'Invalid quantity.',
-      });
+      Toast.show({ type: 'errorToast', text1: 'Invalid quantity.' });
       return;
     }
 
@@ -73,34 +88,22 @@ export default function ProductsScreen() {
       await api.post(`/api/v1/products/${selectedProduct.id}/stocks`, {
         stock: { quantity: parseInt(quantity) },
       });
-      Toast.show({
-        type: 'successToast',
-        text1: 'Stock added successfully!',
-      });
+      Toast.show({ type: 'successToast', text1: 'Stock added successfully!' });
       setModalVisible(false);
       setQuantity('');
       fetchProducts();
     } catch (error) {
-      Toast.show({
-        type: 'errorToast',
-        text1: 'Failed to add stock.',
-      });
+      Toast.show({ type: 'errorToast', text1: 'Failed to add stock.' });
     }
   };
 
   const handleCreateProduct = async (product) => {
     try {
       await createProduct(product);
-      Toast.show({
-        type: 'successToast',
-        text1: 'Product created successfully!',
-      });
+      Toast.show({ type: 'successToast', text1: 'Product created successfully!' });
       fetchProducts();
     } catch {
-      Toast.show({
-        type: 'errorToast',
-        text1: 'Failed to create product.',
-      });
+      Toast.show({ type: 'errorToast', text1: 'Failed to create product.' });
     }
   };
 
@@ -108,14 +111,25 @@ export default function ProductsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backArrow}>←</Text>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
         </TouchableOpacity>
         <Text style={styles.header}>Products</Text>
       </View>
 
       <View style={styles.searchContainer}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <Text style={styles.searchPlaceholder}>Search by name</Text>
+        <MaterialCommunityIcons
+          name="magnify"
+          size={20}
+          color={colors.primary}
+          style={styles.searchIcon}
+        />
+        <TextInput
+          value={searchQuery}
+          onChangeText={handleSearch}
+          placeholder="Search products by name or price..."
+          placeholderTextColor="#999"
+          style={styles.searchInput}
+        />
       </View>
 
       <FlatList
@@ -135,12 +149,8 @@ export default function ProductsScreen() {
               />
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{item.attributes.name}</Text>
-                <Text style={styles.subtitle}>
-                  Stock: {item.attributes.total_stock}
-                </Text>
-                <Text style={styles.subtitle}>
-                  KES {item.attributes.price}
-                </Text>
+                <Text style={styles.subtitle}>Stock: {item.attributes.total_stock}</Text>
+                <Text style={styles.subtitle}>KES {item.attributes.price}</Text>
               </View>
               <View style={styles.counterButtons}>
                 <TouchableOpacity style={styles.counterButton}>
@@ -154,12 +164,8 @@ export default function ProductsScreen() {
             </View>
 
             <Card.Actions>
-              <Button onPress={() => openViewStockModal(item)}>
-                View Stock
-              </Button>
-              <Button onPress={() => openAddStockModal(item)}>
-                Add Stock
-              </Button>
+              <Button onPress={() => openViewStockModal(item)}>View Stock</Button>
+              <Button onPress={() => openAddStockModal(item)}>Add Stock</Button>
             </Card.Actions>
           </Card>
         )}
@@ -202,12 +208,8 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  backArrow: {
-    fontSize: 24,
-    color: colors.primary,
-    marginRight: 8,
+    marginBottom: 8,
+    gap: 10,
   },
   header: {
     fontSize: 22,
@@ -218,19 +220,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1e1e2e',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginBottom: 10,
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  searchInput: {
+    color: '#fff',
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
   },
   searchIcon: {
-    fontSize: 18,
-    color: '#888',
-    marginRight: 8,
-  },
-  searchPlaceholder: {
-    color: '#888',
-    fontSize: 14,
+    paddingLeft: 4,
   },
   card: {
     marginBottom: 8,
