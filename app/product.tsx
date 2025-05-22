@@ -12,10 +12,13 @@ import {
 } from 'react-native';
 import { Button, Card, FAB } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import colors from '../theme/colors';
 import { getProducts } from '../lib/helpers/getProducts';
 import api from '../lib/api';
 import BottomSheetModal from '../components/BottomSheetModal';
+import CreateProductModal from '../components/CreateProductModal';
+import { createProduct } from '../lib/helpers/createProduct';
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
@@ -24,6 +27,7 @@ export default function ProductsScreen() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState('');
   const [modalType, setModalType] = useState<'add' | 'view'>('add');
+  const [createModalVisible, setCreateModalVisible] = useState(false);
 
   const router = useRouter();
 
@@ -74,6 +78,16 @@ export default function ProductsScreen() {
     }
   };
 
+  const handleCreateProduct = async (product) => {
+    try {
+      await createProduct(product);
+      Alert.alert('Success', 'Product created successfully.');
+      fetchProducts();
+    } catch {
+      Alert.alert('Error', 'Failed to create product.');
+    }
+  };
+
   if (loading) {
     return (
       <ActivityIndicator style={{ marginTop: 50 }} color={colors.primary} />
@@ -109,9 +123,7 @@ export default function ProductsScreen() {
         icon="plus"
         style={styles.fab}
         color="white"
-        onPress={() =>
-          Alert.alert('Pick a product', 'Tap "Add Stock" inside a product card.')
-        }
+        onPress={() => setCreateModalVisible(true)}
       />
 
       <BottomSheetModal
@@ -122,6 +134,12 @@ export default function ProductsScreen() {
         quantity={quantity}
         setQuantity={setQuantity}
         onSubmit={submitStock}
+      />
+
+      <CreateProductModal
+        visible={createModalVisible}
+        onClose={() => setCreateModalVisible(false)}
+        onSubmit={handleCreateProduct}
       />
     </SafeAreaView>
   );
