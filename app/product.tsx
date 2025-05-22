@@ -1,10 +1,7 @@
-// app/products.tsx
-
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -14,6 +11,7 @@ import {
 } from 'react-native';
 import { Button, Card, FAB } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 import colors from '../theme/colors';
 import { getProducts } from '../lib/helpers/getProducts';
@@ -64,7 +62,10 @@ export default function ProductsScreen() {
 
   const submitStock = async () => {
     if (!quantity || isNaN(quantity)) {
-      Alert.alert('Invalid Quantity', 'Please enter a valid number.');
+      Toast.show({
+        type: 'errorToast',
+        text1: 'Invalid quantity.',
+      });
       return;
     }
 
@@ -72,22 +73,34 @@ export default function ProductsScreen() {
       await api.post(`/api/v1/products/${selectedProduct.id}/stocks`, {
         stock: { quantity: parseInt(quantity) },
       });
-      Alert.alert('Success', 'Stock added successfully.');
+      Toast.show({
+        type: 'successToast',
+        text1: 'Stock added successfully!',
+      });
       setModalVisible(false);
       setQuantity('');
       fetchProducts();
     } catch (error) {
-      Alert.alert('Error', 'Failed to add stock.');
+      Toast.show({
+        type: 'errorToast',
+        text1: 'Failed to add stock.',
+      });
     }
   };
 
   const handleCreateProduct = async (product) => {
     try {
       await createProduct(product);
-      Alert.alert('Success', 'Product created successfully.');
+      Toast.show({
+        type: 'successToast',
+        text1: 'Product created successfully!',
+      });
       fetchProducts();
     } catch {
-      Alert.alert('Error', 'Failed to create product.');
+      Toast.show({
+        type: 'errorToast',
+        text1: 'Failed to create product.',
+      });
     }
   };
 
@@ -104,6 +117,7 @@ export default function ProductsScreen() {
       <FlatList
         data={products}
         keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={{ paddingBottom: 100 }}
         renderItem={({ item }) => (
           <Card style={styles.card}>
             <View style={styles.cardContent}>
