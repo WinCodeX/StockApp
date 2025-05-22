@@ -1,7 +1,8 @@
+// app/products.tsx
+
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -20,6 +21,7 @@ import BottomSheetModal from '../components/BottomSheetModal';
 import CreateProductModal from '../components/CreateProductModal';
 import { createProduct } from '../lib/helpers/createProduct';
 import defaultProductImage from '../assets/images/default_product.png';
+import LoaderOverlay from '../components/LoaderOverlay';
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
@@ -104,12 +106,6 @@ export default function ProductsScreen() {
     }
   };
 
-  if (loading) {
-    return (
-      <ActivityIndicator style={{ marginTop: 50 }} color={colors.primary} />
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Products</Text>
@@ -131,8 +127,12 @@ export default function ProductsScreen() {
               />
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{item.attributes.name}</Text>
-                <Text style={styles.subtitle}>Stock: {item.attributes.total_stock}</Text>
-                <Text style={styles.subtitle}>KES {item.attributes.price}</Text>
+                <Text style={styles.subtitle}>
+                  Stock: {item.attributes.total_stock}
+                </Text>
+                <Text style={styles.subtitle}>
+                  KES {item.attributes.price}
+                </Text>
               </View>
               <View style={styles.counterButtons}>
                 <TouchableOpacity style={styles.counterButton}>
@@ -146,8 +146,12 @@ export default function ProductsScreen() {
             </View>
 
             <Card.Actions>
-              <Button onPress={() => openViewStockModal(item)}>View Stock</Button>
-              <Button onPress={() => openAddStockModal(item)}>Add Stock</Button>
+              <Button onPress={() => openViewStockModal(item)}>
+                View Stock
+              </Button>
+              <Button onPress={() => openAddStockModal(item)}>
+                Add Stock
+              </Button>
             </Card.Actions>
           </Card>
         )}
@@ -175,6 +179,8 @@ export default function ProductsScreen() {
         onClose={() => setCreateModalVisible(false)}
         onSubmit={handleCreateProduct}
       />
+
+      <LoaderOverlay visible={loading} />
     </SafeAreaView>
   );
 }
