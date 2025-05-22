@@ -44,7 +44,7 @@ export default function ProductsScreen() {
     setLoading(true);
     try {
       const data = await getProducts();
-      setProducts(data);
+      setProducts(data.products.data); // structure-aware
     } catch (err) {
       console.error(err);
     } finally {
@@ -60,7 +60,7 @@ export default function ProductsScreen() {
     }
     try {
       const results = await searchProducts(text);
-      setProducts(results);
+      setProducts(results.products.data); // extract data correctly
     } catch (err) {
       Toast.show({ type: 'errorToast', text1: 'Search failed.' });
     }
