@@ -6,10 +6,8 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Modal,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { Button, Card, FAB } from 'react-native-paper';
@@ -17,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import colors from '../theme/colors';
 import { getProducts } from '../lib/helpers/getProducts';
 import api from '../lib/api';
+import BottomSheetModal from '../components/BottomSheetModal';
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
@@ -24,6 +23,8 @@ export default function ProductsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState('');
+  const [modalType, setModalType] = useState<'add' | 'view'>('add');
+
   const router = useRouter();
 
   useEffect(() => {
@@ -44,6 +45,13 @@ export default function ProductsScreen() {
 
   const openAddStockModal = (product) => {
     setSelectedProduct(product);
+    setModalType('add');
+    setModalVisible(true);
+  };
+
+  const openViewStockModal = (product) => {
+    setSelectedProduct(product);
+    setModalType('view');
     setModalVisible(true);
   };
 
@@ -86,7 +94,7 @@ export default function ProductsScreen() {
               subtitle={`Price: ${item.attributes.price}`}
             />
             <Card.Actions>
-              <Button onPress={() => router.push(`/stocks?id=${item.id}`)}>
+              <Button onPress={() => openViewStockModal(item)}>
                 View Stock
               </Button>
               <Button onPress={() => openAddStockModal(item)}>
@@ -106,34 +114,15 @@ export default function ProductsScreen() {
         }
       />
 
-      <Modal
+      <BottomSheetModal
         visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>Add Stock</Text>
-            <Text style={styles.modalLabel}>
-              Product: {selectedProduct?.attributes?.name}
-            </Text>
-            <TextInput
-              value={quantity}
-              onChangeText={setQuantity}
-              keyboardType="numeric"
-              placeholder="Enter quantity"
-              style={styles.input}
-            />
-            <View style={styles.modalActions}>
-              <Button mode="contained" onPress={submitStock}>
-                Submit
-              </Button>
-              <Button onPress={() => setModalVisible(false)}>Cancel</Button>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setModalVisible(false)}
+        product={selectedProduct}
+        type={modalType}
+        quantity={quantity}
+        setQuantity={setQuantity}
+        onSubmit={submitStock}
+      />
     </SafeAreaView>
   );
 }
@@ -168,38 +157,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalBox: {
-    backgroundColor: 'white',
-    padding: 24,
-    borderRadius: 10,
-    width: '80%',
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  modalLabel: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    borderRadius: 6,
-    marginBottom: 16,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
   },
 });
