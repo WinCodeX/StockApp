@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   View,
@@ -13,6 +13,7 @@ import {
 import { Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
+import { getStockHistory } from '../lib/helpers/stockHistory';
 
 export default function BottomSheetModal({
   visible,
@@ -31,14 +32,28 @@ export default function BottomSheetModal({
   setQuantity: (value: string) => void;
   onSubmit: () => void;
 }) {
-  const mockStockHistory = [
-    { id: 1, quantity: 30, date: '2025-05-25' },
-    { id: 2, quantity: 20, date: '2025-05-23' },
-    { id: 3, quantity: 50, date: '2025-05-20' },
-  ];
+  const [stockHistory, setStockHistory] = useState([]);
+
+  useEffect(() => {
+    if (visible && type === 'view' && product) {
+      (async () => {
+        try {
+          const data = await getStockHistory(product.id);
+          setStockHistory(data);
+        } catch (err) {
+          console.error('Failed to fetch stock history:', err);
+        }
+      })();
+    }
+  }, [visible, type, product]);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}
@@ -72,12 +87,12 @@ export default function BottomSheetModal({
             </>
           ) : (
             <FlatList
-              data={mockStockHistory}
+              data={stockHistory}
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => (
                 <View style={styles.historyRow}>
                   <Text style={styles.historyText}>
-                    Qty: {item.quantity} | Date: {item.date}
+                    Qty: {item.quantity} | Date: {item.created_at || item.date}
                   </Text>
                 </View>
               )}
