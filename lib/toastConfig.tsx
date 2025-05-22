@@ -1,8 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export const toastConfig = {
-
-// ← new “default” style
   defaultToast: ({ text1 }: any) => (
     <View style={[styles.toast, { backgroundColor: '#6272a4' }]}>
       <Text style={styles.toastText}>{text1}</Text>
@@ -22,14 +21,22 @@ export const toastConfig = {
   ),
 
   errorToast: ({ text1 }: any) => (
-    <View style={[styles.toast, { backgroundColor: '#ff5555' }]}>
-      <Text style={styles.toastText}>{text1}</Text>
+    <View style={[styles.toast, styles.errorContainer]}>
+      <MaterialCommunityIcons
+        name="alert-circle"
+        size={20}
+        color="#fff"
+        style={{ marginRight: 8 }}
+      />
+      <Text style={styles.errorText}>{text1}</Text>
     </View>
   ),
 };
 
 const styles = StyleSheet.create({
   toast: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 10,
@@ -42,5 +49,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  errorContainer: {
+    backgroundColor: '#ff5555',
+  },
+  errorText: {
+    color: '#000',
+    fontSize: 15,
+    fontWeight: 'bold',
+    flex: 1,
   },
 });
