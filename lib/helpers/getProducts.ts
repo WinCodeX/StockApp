@@ -9,5 +9,5 @@ export const getProducts = async () => {
       Authorization: `Bearer ${token}`,
     },
   });
-  return res.data.products;
+  return res.data.products.data;
 };
