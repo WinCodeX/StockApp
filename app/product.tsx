@@ -43,8 +43,8 @@ export default function ProductsScreen() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await getProducts();
-      setProducts(response.products?.data || []);
+      const data = await getProducts();
+      setProducts(data);
     } catch (err) {
       console.error(err);
       Toast.show({ type: 'errorToast', text1: 'Failed to load products.' });
@@ -59,9 +59,10 @@ export default function ProductsScreen() {
       fetchProducts();
       return;
     }
+
     try {
-      const results = await searchProducts(text);
-      setProducts(results.products?.data || []);
+      const data = await searchProducts(text);
+      setProducts(data);
     } catch (err) {
       Toast.show({ type: 'errorToast', text1: 'Search failed.' });
     }
