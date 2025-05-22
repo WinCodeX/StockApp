@@ -1,14 +1,4 @@
-// Cleaned version of your Account Screen 
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
-import { useFocusEffect, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
-import { Avatar, Button, Dialog, Portal } from 'react-native-paper';
-import Toast from 'react-native-toast-message';
-import api from '../lib/api';
+// Cleaned version of your Account Screen using API helpers import { MaterialCommunityIcons } from '@expo/vector-icons'; import { useNavigation } from '@react-navigation/native'; import * as ImagePicker from 'expo-image-picker'; import { useFocusEffect, useRouter } from 'expo-router'; import * as SecureStore from 'expo-secure-store'; import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'; import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'; import { Avatar, Button, Dialog, Portal } from 'react-native-paper'; import Toast from 'react-native-toast-message'; import { getUser } from '../lib/helpers/getUser'; import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 
 export default function AccountScreen() { const [userName, setUserName] = useState<string | null>(null); const [avatarUri, setAvatarUri] = useState<string>(); const [loading, setLoading] = useState<boolean>(true); const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -16,31 +6,7 @@ const router = useRouter(); const navigation = useNavigation();
 
 useLayoutEffect(() => { navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } }); return () => { navigation.getParent()?.setOptions({ tabBarStyle: { display: 'flex' } }); }; }, [navigation]);
 
-const loadProfile = useCallback(() => {
-  (async () => {
-    try {
-      const token = await SecureStore.getItemAsync('auth_token');
-      const res = await api.get('/api/v1/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      });
-
-      const user = res.data.data.attributes;
-
-setUserName(user.username || '');
-setAvatarUri(user.avatar_url || null);
-
-console.log('User profile data:', res.data.data.attributes);
-
-    } catch (error) {
-      Alert.alert('Error', 'Unable to load profile.');
-    } finally {
-      setLoading(false);
-    }
-  })();
-}, []);
+const loadProfile = useCallback(() => { (async () => { try { const user = await getUser(); setUserName(user.username || ''); setAvatarUri(user.avatar_url || null); console.log('User profile data:', user); } catch (error) { Alert.alert('Error', 'Unable to load profile.'); } finally { setLoading(false); } })(); }, []);
 
 useEffect(() => { loadProfile(); }, [loadProfile]); useFocusEffect(useCallback(() => { loadProfile(); }, [loadProfile]));
 
@@ -53,22 +19,8 @@ const result = await ImagePicker.launchImageLibraryAsync({
 });
 if (result.canceled || !result.assets?.length) return;
 
-const pickedUri = result.assets[0].uri;
-const token = await SecureStore.getItemAsync('auth_token');
-const form = new FormData();
-form.append('avatar', {
-  uri: pickedUri,
-  name: 'avatar.jpg',
-  type: 'image/jpeg',
-} as any);
-
 try {
-  await api.post('/me/avatar', form, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  await uploadAvatar(result.assets[0].uri);
   Toast.show({ type: 'successToast', text1: 'Avatar updated!' });
   loadProfile();
 } catch {
@@ -110,5 +62,5 @@ return ( <ScrollView style={styles.container}> <View style={styles.identityCard}
 
 ); }
 
-const styles = StyleSheet.create({ loader: { flex: 1, justifyContent: 'center', alignItems: 'center' }, container: { flex: 1, backgroundColor: '#1e1e2e' }, identityCard: { backgroundColor: '#282a36', margin: 16, borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', }, identityLeft: { flexDirection: 'column' }, userName: { color: '#fff', fontSize: 18, fontWeight: 'bold' }, accountType: { color: '#888', fontSize: 14, marginTop: 4 }, logoutCard: { backgroundColor: '#282a36', margin: 16, borderRadius: 12, padding: 12 }, logoutButton: { flexDirection: 'row', alignItems: 'center' }, logoutIcon: { marginRight: 12 }, logoutText: { color: '#ff6b6b', fontSize: 16, fontWeight: '600' }, dialog: { backgroundColor: '#282a36', borderRadius: 12 }, dialogTitle: { color: '#f8f8f2', fontWeight: 'bold' }, dialogText: { color: '#ccc', fontSize: 15 }, dialogActions: { justifyContent: 'space-between', paddingHorizontal: 12 }, dialogCancel: { backgroundColor: '#bd93f9', borderRadius: 6, marginRight: 8 }, cancelLabel: { color: '#fff' }, dialogConfirm: { borderColor: '#ff5555', borderWidth: 1, borderRadius: 6 }, confirmLabel: { color: '#ff5555', fontWeight: 'bold' }, });
+const styles = StyleSheet.create({ loader: { flex: 1, justifyContent: 'center', alignItems: 'center' }, container: { flex: 1, backgroundColor: '#1e1e2e' }, identityCard: { backgroundColor: '#282a36', margin: 16, borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, identityLeft: { flexDirection: 'column' }, userName: { color: '#fff', fontSize: 18, fontWeight: 'bold' }, accountType: { color: '#888', fontSize: 14, marginTop: 4 }, logoutCard: { backgroundColor: '#282a36', margin: 16, borderRadius: 12, padding: 12 }, logoutButton: { flexDirection: 'row', alignItems: 'center' }, logoutIcon: { marginRight: 12 }, logoutText: { color: '#ff6b6b', fontSize: 16, fontWeight: '600' }, dialog: { backgroundColor: '#282a36', borderRadius: 12 }, dialogTitle: { color: '#f8f8f2', fontWeight: 'bold' }, dialogText: { color: '#ccc', fontSize: 15 }, dialogActions: { justifyContent: 'space-between', paddingHorizontal: 12 }, dialogCancel: { backgroundColor: '#bd93f9', borderRadius: 6, marginRight: 8 }, cancelLabel: { color: '#fff' }, dialogConfirm: { borderColor: '#ff5555', borderWidth: 1, borderRadius: 6 }, confirmLabel: { color: '#ff5555', fontWeight: 'bold' }, });
 
