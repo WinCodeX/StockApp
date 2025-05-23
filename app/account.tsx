@@ -12,14 +12,15 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
 } from 'react-native';
 import { Avatar, Button, Dialog, Portal } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
@@ -27,7 +28,7 @@ import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 export default function AccountScreen() {
   const [userName, setUserName] = useState<string | null>(null);
   const [avatarUri, setAvatarUri] = useState<string>();
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const router = useRouter();
@@ -35,7 +36,6 @@ export default function AccountScreen() {
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
-
     return () => {
       navigation.getParent()?.setOptions({ tabBarStyle: { display: 'flex' } });
     };
@@ -47,8 +47,7 @@ export default function AccountScreen() {
         const user = await getUser();
         setUserName(user.username || '');
         setAvatarUri(user.avatar_url || null);
-        console.log('User profile data:', user);
-      } catch (error) {
+      } catch {
         Alert.alert('Error', 'Unable to load profile.');
       } finally {
         setLoading(false);
@@ -106,7 +105,8 @@ export default function AccountScreen() {
   }
 
   return (
-    <>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
@@ -114,7 +114,8 @@ export default function AccountScreen() {
         <Text style={styles.header}>Account</Text>
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: 12 }}>
+      {/* Body */}
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={styles.identityCard}>
           <View style={styles.identityLeft}>
             <Text style={styles.userName}>{userName || 'No name'}</Text>
@@ -148,6 +149,7 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Logout Confirmation Dialog */}
         <Portal>
           <Dialog
             visible={showLogoutConfirm}
@@ -155,13 +157,11 @@ export default function AccountScreen() {
             style={styles.dialog}
           >
             <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
-
             <Dialog.Content>
               <Text style={styles.dialogText}>
                 Are you sure you want to log out?
               </Text>
             </Dialog.Content>
-
             <Dialog.Actions style={styles.dialogActions}>
               <Button
                 onPress={() => setShowLogoutConfirm(false)}
@@ -170,7 +170,6 @@ export default function AccountScreen() {
               >
                 No
               </Button>
-
               <Button
                 mode="outlined"
                 onPress={confirmLogout}
@@ -183,9 +182,10 @@ export default function AccountScreen() {
           </Dialog>
         </Portal>
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   loader: {
@@ -200,9 +200,9 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 12,
+    paddingTop: 8,
     paddingHorizontal: 16,
+    marginBottom: 12,
     gap: 10,
   },
   header: {
