@@ -1,5 +1,3 @@
-// components/CreateProductModal.tsx
-
 import React, { useState } from 'react';
 import {
   Modal,
@@ -8,11 +6,14 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  Image,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import colors from '../theme/colors';
 
 export default function CreateProductModal({
@@ -27,12 +28,31 @@ export default function CreateProductModal({
     sku: string;
     price: number;
     quantity: number;
+    image?: string;
   }) => void;
 }) {
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [image, setImage] = useState<string | null>(null);
+
+  const handlePickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      return Alert.alert('Permission required', 'Please enable photo access.');
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      setImage(result.assets[0].uri);
+    }
+  };
 
   const handleCreate = () => {
     if (!name || !sku || !price || !quantity) return;
@@ -42,31 +62,25 @@ export default function CreateProductModal({
       sku,
       price: parseFloat(price),
       quantity: parseInt(quantity),
+      image: image || undefined,
     });
 
     setName('');
     setSku('');
     setPrice('');
     setQuantity('');
+    setImage(null);
     onClose();
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}
       >
         <View style={styles.sheet}>
-          <TouchableOpacity
-            onPress={onClose}
-            style={styles.dragHandleContainer}
-          >
+          <TouchableOpacity onPress={onClose} style={styles.dragHandleContainer}>
             <MaterialCommunityIcons name="chevron-down" size={30} color="#bbb" />
           </TouchableOpacity>
 
@@ -106,6 +120,16 @@ export default function CreateProductModal({
             placeholderTextColor="#888"
           />
 
+          <TouchableOpacity onPress={handlePickImage} style={styles.imagePicker}>
+            <Text style={styles.imagePickerText}>
+              {image ? 'Change Product Image' : 'Pick Product Image'}
+            </Text>
+          </TouchableOpacity>
+
+          {image && (
+            <Image source={{ uri: image }} style={styles.previewImage} />
+          )}
+
           <Button mode="contained" onPress={handleCreate} style={styles.button}>
             Create
           </Button>
@@ -126,7 +150,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '85%',
+    maxHeight: '90%',
   },
   dragHandleContainer: {
     alignItems: 'center',
@@ -150,5 +174,23 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: colors.primary,
+    marginTop: 12,
+  },
+  imagePicker: {
+    marginBottom: 10,
+    backgroundColor: '#44475a',
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  imagePickerText: {
+    color: '#f8f8f2',
+    fontSize: 14,
+  },
+  previewImage: {
+    width: '100%',
+    height: 160,
+    borderRadius: 8,
+    marginBottom: 12,
   },
 });
