@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { Avatar, Button, Dialog, Portal } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
+
 import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 
@@ -34,6 +35,7 @@ export default function AccountScreen() {
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
+
     return () => {
       navigation.getParent()?.setOptions({ tabBarStyle: { display: 'flex' } });
     };
@@ -66,8 +68,10 @@ export default function AccountScreen() {
 
   const pickAndUploadAvatar = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted)
+
+    if (!perm.granted) {
       return Alert.alert('Permission required', 'Please allow photo access.');
+    }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -102,71 +106,84 @@ export default function AccountScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.identityCard}>
-        <View style={styles.identityLeft}>
-          <Text style={styles.userName}>{userName || 'No name'}</Text>
-          <Text style={styles.accountType}>StockApp Account</Text>
+    <>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
+        </TouchableOpacity>
+        <Text style={styles.header}>Account</Text>
+      </View>
+
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: 12 }}>
+        <View style={styles.identityCard}>
+          <View style={styles.identityLeft}>
+            <Text style={styles.userName}>{userName || 'No name'}</Text>
+            <Text style={styles.accountType}>StockApp Account</Text>
+          </View>
+
+          <TouchableOpacity onPress={pickAndUploadAvatar}>
+            <Avatar.Image
+              size={60}
+              source={
+                avatarUri
+                  ? { uri: avatarUri }
+                  : require('../assets/images/avatar-placeholder.png')
+              }
+            />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={pickAndUploadAvatar}>
-          <Avatar.Image
-            size={60}
-            source={
-              avatarUri
-                ? { uri: avatarUri }
-                : require('../assets/images/avatar-placeholder.png')
-            }
-          />
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.logoutCard}>
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={() => setShowLogoutConfirm(true)}
-        >
-          <MaterialCommunityIcons
-            name="logout"
-            size={22}
-            color="#ff6b6b"
-            style={styles.logoutIcon}
-          />
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.logoutCard}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => setShowLogoutConfirm(true)}
+          >
+            <MaterialCommunityIcons
+              name="logout"
+              size={22}
+              color="#ff6b6b"
+              style={styles.logoutIcon}
+            />
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
 
-      <Portal>
-        <Dialog
-          visible={showLogoutConfirm}
-          onDismiss={() => setShowLogoutConfirm(false)}
-          style={styles.dialog}
-        >
-          <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
-          <Dialog.Content>
-            <Text style={styles.dialogText}>
-              Are you sure you want to log out?
-            </Text>
-          </Dialog.Content>
-          <Dialog.Actions style={styles.dialogActions}>
-            <Button
-              onPress={() => setShowLogoutConfirm(false)}
-              style={styles.dialogCancel}
-              labelStyle={styles.cancelLabel}
-            >
-              No
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={confirmLogout}
-              style={styles.dialogConfirm}
-              labelStyle={styles.confirmLabel}
-            >
-              Yes
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-    </ScrollView>
+        <Portal>
+          <Dialog
+            visible={showLogoutConfirm}
+            onDismiss={() => setShowLogoutConfirm(false)}
+            style={styles.dialog}
+          >
+            <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
+
+            <Dialog.Content>
+              <Text style={styles.dialogText}>
+                Are you sure you want to log out?
+              </Text>
+            </Dialog.Content>
+
+            <Dialog.Actions style={styles.dialogActions}>
+              <Button
+                onPress={() => setShowLogoutConfirm(false)}
+                style={styles.dialogCancel}
+                labelStyle={styles.cancelLabel}
+              >
+                No
+              </Button>
+
+              <Button
+                mode="outlined"
+                onPress={confirmLogout}
+                style={styles.dialogConfirm}
+                labelStyle={styles.confirmLabel}
+              >
+                Yes
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
+      </ScrollView>
+    </>
   );
 }
 
@@ -179,6 +196,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1e1e2e',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  header: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#bd93f9',
   },
   identityCard: {
     backgroundColor: '#282a36',
