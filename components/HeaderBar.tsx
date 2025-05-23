@@ -4,17 +4,16 @@ import { useRouter } from 'expo-router';
 import colors from '../theme/colors';
 import { getUser, getCachedAvatar } from '../lib/helpers/getUser';
 
-const BASE_URL = 'http://192.168.100.155:3000';
+const BASE_URL = 'http://192.168.100.155:3000'; // Adjust this if needed
 
 export default function HeaderBar() {
   const [avatar, setAvatar] = useState<string | null>(null);
-  const [error, setError] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const loadAvatar = async () => {
       const cached = await getCachedAvatar();
-      if (cached) setAvatar(cached);
+      if (cached) setAvatar(`${BASE_URL}${cached}`);
 
       try {
         const user = await getUser();
@@ -33,12 +32,12 @@ export default function HeaderBar() {
       <TouchableOpacity onPress={() => router.push('/account')}>
         <Image
           source={
-            avatar && !error
+            avatar
               ? { uri: avatar }
               : require('../assets/images/avatar-placeholder.png')
           }
-          onError={() => setError(true)}
           style={styles.avatar}
+          onError={() => setAvatar(null)}
         />
       </TouchableOpacity>
     </View>
@@ -62,8 +61,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 34,
+    height: 34,
+    borderRadius: 17, // perfectly circular
   },
 });
