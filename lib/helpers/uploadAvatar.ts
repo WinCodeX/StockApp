@@ -13,7 +13,7 @@ export const uploadAvatar = async (uri: string) => {
     type: Platform.OS === "ios" ? "image/jpeg" : "image/jpg",
   } as any);
 
-  const res = await api.post("/me/avatar", form, {
+  const res = await api.put("/me/avatar", form, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "multipart/form-data",
