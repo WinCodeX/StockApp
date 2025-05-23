@@ -25,6 +25,9 @@ export default function TabLayout() {
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.3,
           shadowRadius: 8,
+
+          // Key fix:
+          borderTopWidth: 0,
         },
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'ellipse-outline';
