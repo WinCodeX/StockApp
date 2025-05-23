@@ -4,8 +4,6 @@ import { useRouter } from 'expo-router';
 import colors from '../theme/colors';
 import { getUser, getCachedAvatar } from '../lib/helpers/getUser';
 
-const BASE_URL = 'http://192.168.100.155:3000'; // Adjust this if needed
-
 export default function HeaderBar() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const router = useRouter();
@@ -13,11 +11,11 @@ export default function HeaderBar() {
   useEffect(() => {
     const loadAvatar = async () => {
       const cached = await getCachedAvatar();
-      if (cached) setAvatar(`${BASE_URL}${cached}`);
+      if (cached) setAvatar(cached); // should be full URL from cache if stored
 
       try {
         const user = await getUser();
-        if (user.avatar_url) setAvatar(`${BASE_URL}${user.avatar_url}`);
+        if (user.avatar_url) setAvatar(user.avatar_url); // already prefixed in getUser.ts
       } catch (error) {
         console.error('Failed to load user avatar', error);
       }
@@ -63,6 +61,6 @@ const styles = StyleSheet.create({
   avatar: {
     width: 34,
     height: 34,
-    borderRadius: 17, // perfectly circular
+    borderRadius: 17,
   },
 });
