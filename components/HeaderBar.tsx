@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import colors from '../theme/colors';
-import { getUser, getCachedAvatar } from '../lib/helpers/getUser';
+import { getUser } from '../lib/helpers/getUser';
 
 export default function HeaderBar() {
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -10,12 +10,11 @@ export default function HeaderBar() {
 
   useEffect(() => {
     const loadAvatar = async () => {
-      const cached = await getCachedAvatar();
-      if (cached) setAvatar(cached); // should be full URL from cache if stored
-
       try {
         const user = await getUser();
-        if (user.avatar_url) setAvatar(user.avatar_url); // already prefixed in getUser.ts
+        if (user.avatar_url) {
+          setAvatar(user.avatar_url); // Should already be full URL
+        }
       } catch (error) {
         console.error('Failed to load user avatar', error);
       }
