@@ -32,7 +32,7 @@ export default function HeaderBar() {
           source={
             avatar
               ? { uri: avatar }
-              : require('../assets/images/default_avatar.png')
+              : require('../../assets/images/default_avatar.png')
           }
           style={styles.avatar}
         />
