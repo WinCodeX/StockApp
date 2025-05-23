@@ -24,6 +24,8 @@ import defaultProductImage from '../assets/images/default_product.png';
 import LoaderOverlay from '../components/LoaderOverlay';
 import { searchProducts } from '../lib/helpers/searchProducts';
 
+const BASE_URL = 'http://192.168.100.155:3000';
+
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +92,7 @@ export default function ProductsScreen() {
       await api.post(`/api/v1/products/${selectedProduct.id}/stocks`, {
         stock: { quantity: parseInt(quantity) },
       });
+
       Toast.show({ type: 'successToast', text1: 'Stock added successfully!' });
       setModalVisible(false);
       setQuantity('');
@@ -144,21 +147,26 @@ export default function ProductsScreen() {
               <Image
                 source={
                   item.attributes.image_url
-                    ? { uri: item.attributes.image_url }
+                    ? { uri: `${BASE_URL}${item.attributes.image_url}` }
                     : defaultProductImage
                 }
                 style={styles.image}
+                onError={() => console.log('Failed to load product image')}
               />
+
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{item.attributes.name}</Text>
                 <Text style={styles.subtitle}>Stock: {item.attributes.total_stock}</Text>
                 <Text style={styles.subtitle}>KES {item.attributes.price}</Text>
               </View>
+
               <View style={styles.counterButtons}>
                 <TouchableOpacity style={styles.counterButton}>
                   <Text style={styles.counterText}>-</Text>
                 </TouchableOpacity>
+
                 <Text style={styles.counterQuantity}>0</Text>
+
                 <TouchableOpacity style={styles.counterButton}>
                   <Text style={styles.counterText}>+</Text>
                 </TouchableOpacity>
