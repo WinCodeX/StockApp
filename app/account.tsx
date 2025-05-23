@@ -25,6 +25,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 
+const BASE_URL = 'http://192.168.100.155:3000';
+
 export default function AccountScreen() {
   const [userName, setUserName] = useState<string | null>(null);
   const [avatarUri, setAvatarUri] = useState<string>();
@@ -46,7 +48,7 @@ export default function AccountScreen() {
       try {
         const user = await getUser();
         setUserName(user.username || '');
-        setAvatarUri(user.avatar_url || null);
+        setAvatarUri(user.avatar_url ? `${BASE_URL}${user.avatar_url}` : null);
       } catch {
         Alert.alert('Error', 'Unable to load profile.');
       } finally {
@@ -106,7 +108,6 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
@@ -114,7 +115,6 @@ export default function AccountScreen() {
         <Text style={styles.header}>Account</Text>
       </View>
 
-      {/* Body */}
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={styles.identityCard}>
           <View style={styles.identityLeft}>
@@ -130,6 +130,7 @@ export default function AccountScreen() {
                   ? { uri: avatarUri }
                   : require('../assets/images/avatar-placeholder.png')
               }
+              onError={() => setAvatarUri(null)}
             />
           </TouchableOpacity>
         </View>
@@ -149,7 +150,6 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Logout Confirmation Dialog */}
         <Portal>
           <Dialog
             visible={showLogoutConfirm}
@@ -158,9 +158,7 @@ export default function AccountScreen() {
           >
             <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
             <Dialog.Content>
-              <Text style={styles.dialogText}>
-                Are you sure you want to log out?
-              </Text>
+              <Text style={styles.dialogText}>Are you sure you want to log out?</Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
               <Button
