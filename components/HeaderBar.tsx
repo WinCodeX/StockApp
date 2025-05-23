@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import colors from '../theme/colors';
 import { getUser } from '../lib/helpers/getUser';
 
+const BASE_URL = 'http://192.168.100.155:3000'; // make sure it's correct
+
 export default function HeaderBar() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const router = useRouter();
@@ -13,10 +15,10 @@ export default function HeaderBar() {
       try {
         const user = await getUser();
         if (user.avatar_url) {
-          setAvatar(user.avatar_url); // Should already be full URL
+          setAvatar(`${BASE_URL}${user.avatar_url}`);
         }
       } catch (error) {
-        console.error('Failed to load user avatar', error);
+        console.error('Avatar fetch failed', error);
       }
     };
 
@@ -34,7 +36,7 @@ export default function HeaderBar() {
               : require('../assets/images/avatar-placeholder.png')
           }
           style={styles.avatar}
-          onError={() => setAvatar(null)}
+          resizeMode="cover"
         />
       </TouchableOpacity>
     </View>
@@ -61,5 +63,6 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
+    backgroundColor: '#444', // in case image fails
   },
 });
