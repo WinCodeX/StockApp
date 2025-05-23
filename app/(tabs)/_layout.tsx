@@ -7,43 +7,33 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={({ route }) => ({
-        tabBarShowLabel: true,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          marginTop: -4,
-          fontWeight: '500',
-        },
+        tabBarShowLabel: false,
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: '#6272a4',
         tabBarStyle: {
           position: 'absolute',
-          bottom: 5,
-          left: 20,
-          right: 20,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#1e1e2e',
+          borderTopLeftRadius: 32,
+          borderTopRightRadius: 32,
+          height: 85,
+          paddingBottom: 20,
+          paddingTop: 12,
           elevation: 10,
-          backgroundColor: '#101e2f',
-          borderRadius: 24,
-          borderTopWidth: 0,
-          paddingBottom: 10,
-          paddingTop: 4,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 6 },
+          shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.3,
-          shadowRadius: 10,
+          shadowRadius: 8,
         },
-        tabBarItemStyle: {
-          justifyContent: 'center',
-          alignItems: 'center',
-        },
-        tabBarIcon: ({ color, focused }) => {
+        tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'ellipse-outline';
 
           switch (route.name) {
             case 'index':
               iconName = focused ? 'home' : 'home-outline';
               break;
-            case 'products':
+            case 'product':
               iconName = focused ? 'cube' : 'cube-outline';
               break;
             case 'sales':
@@ -57,8 +47,16 @@ export default function TabLayout() {
               break;
           }
 
-          return <Ionicons name={iconName} size={22} color={color} />;
+          return (
+            <Ionicons
+              name={iconName}
+              size={30}
+              color={focused ? colors.primary : '#6272a4'}
+            />
+          );
         },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: '#6272a4',
       })}
     >
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
