@@ -128,7 +128,7 @@ export default function AccountScreen() {
               source={
                 avatarUri
                   ? { uri: avatarUri }
-                  : require('../assets/images/avatar-placeholder.png')
+                  : require('../assets/images/avatar_placeholder.png')
               }
               onError={() => setAvatarUri(null)}
             />
