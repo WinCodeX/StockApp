@@ -8,6 +8,7 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { Button, Card, FAB } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,36 +36,50 @@ export default function ProductsScreen() {
   const [modalType, setModalType] = useState<'add' | 'view'>('add');
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const router = useRouter();
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(1);
   }, []);
 
-  const fetchProducts = async () => {
-    setLoading(true);
+  const fetchProducts = async (nextPage = 1, isLoadMore = false) => {
+    if (isLoadMore && !hasMore) return;
+
+    if (!isLoadMore) setLoading(true);
+    else setIsFetchingMore(true);
+
     try {
-      const data = await getProducts();
-      setProducts(data);
+      const { products: newProducts, meta } = await getProducts(nextPage);
+
+      setProducts(prev =>
+        isLoadMore ? [...prev, ...newProducts] : newProducts
+      );
+      setPage(meta.current_page + 1);
+      setHasMore(meta.has_more);
     } catch (err) {
-      console.error(err);
       Toast.show({ type: 'errorToast', text1: 'Failed to load products.' });
     } finally {
       setLoading(false);
+      setIsFetchingMore(false);
     }
   };
 
   const handleSearch = async (text: string) => {
     setSearchQuery(text);
+
     if (!text) {
-      fetchProducts();
+      fetchProducts(1);
       return;
     }
 
     try {
       const data = await searchProducts(text);
       setProducts(data);
+      setHasMore(false);
     } catch (err) {
       Toast.show({ type: 'errorToast', text1: 'Search failed.' });
     }
@@ -96,7 +111,7 @@ export default function ProductsScreen() {
       Toast.show({ type: 'successToast', text1: 'Stock added successfully!' });
       setModalVisible(false);
       setQuantity('');
-      fetchProducts();
+      fetchProducts(1);
     } catch (error) {
       Toast.show({ type: 'errorToast', text1: 'Failed to add stock.' });
     }
@@ -106,7 +121,7 @@ export default function ProductsScreen() {
     try {
       await createProduct(product);
       Toast.show({ type: 'successToast', text1: 'Product created successfully!' });
-      fetchProducts();
+      fetchProducts(1);
     } catch {
       Toast.show({ type: 'errorToast', text1: 'Failed to create product.' });
     }
@@ -114,13 +129,19 @@ export default function ProductsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color={colors.primary}
+          />
         </TouchableOpacity>
         <Text style={styles.header}>Products</Text>
       </View>
 
+      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <MaterialCommunityIcons
           name="magnify"
@@ -137,10 +158,16 @@ export default function ProductsScreen() {
         />
       </View>
 
+      {/* Product List */}
       <FlatList
         data={products}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ paddingBottom: 100 }}
+        onEndReached={() => fetchProducts(page, true)}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          isFetchingMore ? <ActivityIndicator color="#bd93f9" /> : null
+        }
         renderItem={({ item }) => (
           <Card style={styles.card}>
             <View style={styles.cardContent}>
@@ -156,17 +183,19 @@ export default function ProductsScreen() {
 
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{item.attributes.name}</Text>
-                <Text style={styles.subtitle}>Stock: {item.attributes.total_stock}</Text>
-                <Text style={styles.subtitle}>KES {item.attributes.price}</Text>
+                <Text style={styles.subtitle}>
+                  Stock: {item.attributes.total_stock}
+                </Text>
+                <Text style={styles.subtitle}>
+                  KES {item.attributes.price}
+                </Text>
               </View>
 
               <View style={styles.counterButtons}>
                 <TouchableOpacity style={styles.counterButton}>
                   <Text style={styles.counterText}>-</Text>
                 </TouchableOpacity>
-
                 <Text style={styles.counterQuantity}>0</Text>
-
                 <TouchableOpacity style={styles.counterButton}>
                   <Text style={styles.counterText}>+</Text>
                 </TouchableOpacity>
@@ -181,6 +210,7 @@ export default function ProductsScreen() {
         )}
       />
 
+      {/* Floating Action Button */}
       <FAB
         icon="plus"
         style={styles.fab}
@@ -188,6 +218,7 @@ export default function ProductsScreen() {
         onPress={() => setCreateModalVisible(true)}
       />
 
+      {/* Modals */}
       <BottomSheetModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
