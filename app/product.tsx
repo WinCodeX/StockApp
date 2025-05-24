@@ -47,7 +47,7 @@ export default function ProductsScreen() {
   }, []);
 
   const fetchProducts = async (nextPage = 1, isLoadMore = false) => {
-    if (isLoadMore && !hasMore) return;
+    if (isLoadMore && (!hasMore || isFetchingMore)) return;
 
     if (!isLoadMore) setLoading(true);
     else setIsFetchingMore(true);
@@ -56,7 +56,7 @@ export default function ProductsScreen() {
       const { products: newProducts, meta } = await getProducts(nextPage);
 
       setProducts(prev =>
-        isLoadMore ? [...prev, ...newProducts] : newProducts
+        isLoadMore && nextPage > 1 ? [...prev, ...newProducts] : newProducts
       );
       setPage(meta.current_page + 1);
       setHasMore(meta.has_more);
@@ -132,11 +132,7 @@ export default function ProductsScreen() {
       {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={24}
-            color={colors.primary}
-          />
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
         </TouchableOpacity>
         <Text style={styles.header}>Products</Text>
       </View>
@@ -183,12 +179,8 @@ export default function ProductsScreen() {
 
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{item.attributes.name}</Text>
-                <Text style={styles.subtitle}>
-                  Stock: {item.attributes.total_stock}
-                </Text>
-                <Text style={styles.subtitle}>
-                  KES {item.attributes.price}
-                </Text>
+                <Text style={styles.subtitle}>Stock: {item.attributes.total_stock}</Text>
+                <Text style={styles.subtitle}>KES {item.attributes.price}</Text>
               </View>
 
               <View style={styles.counterButtons}>
