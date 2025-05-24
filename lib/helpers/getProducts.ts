@@ -10,15 +10,21 @@ export const getProducts = async (
 ) => {
   const token = await SecureStore.getItemAsync("auth_token");
 
+  const params: any = {
+    page,
+    per_page: perPage,
+  };
+
+  // Only include query if it's not empty
+  if (query.trim() !== "") {
+    params.query = query;
+  }
+
   const res = await api.get("/api/v1/products", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    params: {
-      page,
-      per_page: perPage,
-      query,
-    },
+    params,
   });
 
   return {
