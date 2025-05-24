@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -14,6 +14,7 @@ import { Button, Card, FAB } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import debounce from 'lodash.debounce';
 
 import colors from '../theme/colors';
 import { getProducts } from '../lib/helpers/getProducts';
@@ -30,6 +31,7 @@ const BASE_URL = 'http://192.168.100.155:3000';
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState('');
@@ -56,8 +58,11 @@ export default function ProductsScreen() {
       const { products: newProducts, meta } = await getProducts(nextPage);
 
       setProducts(prev =>
-        isLoadMore && nextPage > 1 ? [...prev, ...newProducts] : newProducts
+        isLoadMore && nextPage > 1
+          ? [...prev, ...newProducts.filter(p => !prev.some(pp => pp.id === p.id))]
+          : newProducts
       );
+
       setPage(meta.current_page + 1);
       setHasMore(meta.has_more);
     } catch (err) {
@@ -68,21 +73,32 @@ export default function ProductsScreen() {
     }
   };
 
-  const handleSearch = async (text: string) => {
-    setSearchQuery(text);
+  const debouncedSearch = useCallback(
+    debounce(async (text: string) => {
+      try {
+        const data = await searchProducts(text);
+        setProducts(data);
+        setHasMore(false);
+      } catch (err) {
+        Toast.show({ type: 'errorToast', text1: 'Search failed.' });
+      }
+    }, 300),
+    []
+  );
 
+  const handleSearch = (text: string) => {
+    setSearchQuery(text);
     if (!text) {
       fetchProducts(1);
       return;
     }
+    debouncedSearch(text);
+  };
 
-    try {
-      const data = await searchProducts(text);
-      setProducts(data);
-      setHasMore(false);
-    } catch (err) {
-      Toast.show({ type: 'errorToast', text1: 'Search failed.' });
-    }
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchProducts(1);
+    setRefreshing(false);
   };
 
   const openAddStockModal = (product) => {
@@ -161,8 +177,17 @@ export default function ProductsScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
         onEndReached={() => fetchProducts(page, true)}
         onEndReachedThreshold={0.4}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         ListFooterComponent={
           isFetchingMore ? <ActivityIndicator color="#bd93f9" /> : null
+        }
+        ListEmptyComponent={
+          !loading && (
+            <Text style={{ color: '#999', textAlign: 'center', marginTop: 20 }}>
+              No products found.
+            </Text>
+          )
         }
         renderItem={({ item }) => (
           <Card style={styles.card}>
@@ -176,13 +201,11 @@ export default function ProductsScreen() {
                 style={styles.image}
                 onError={() => console.log('Failed to load product image')}
               />
-
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{item.attributes.name}</Text>
                 <Text style={styles.subtitle}>Stock: {item.attributes.total_stock}</Text>
                 <Text style={styles.subtitle}>KES {item.attributes.price}</Text>
               </View>
-
               <View style={styles.counterButtons}>
                 <TouchableOpacity style={styles.counterButton}>
                   <Text style={styles.counterText}>-</Text>
@@ -193,7 +216,6 @@ export default function ProductsScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-
             <Card.Actions>
               <Button onPress={() => openViewStockModal(item)}>View Stock</Button>
               <Button onPress={() => openAddStockModal(item)}>Add Stock</Button>
@@ -202,7 +224,7 @@ export default function ProductsScreen() {
         )}
       />
 
-      {/* Floating Action Button */}
+      {/* FAB and Modals */}
       <FAB
         icon="plus"
         style={styles.fab}
@@ -210,7 +232,6 @@ export default function ProductsScreen() {
         onPress={() => setCreateModalVisible(true)}
       />
 
-      {/* Modals */}
       <BottomSheetModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
