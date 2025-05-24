@@ -33,7 +33,7 @@ export default function HeaderBar() {
           source={
             avatar
               ? { uri: avatar }
-              : require('../assets/images/avatar-placeholder.png')
+              : require('../assets/images/avatar_placeholder.png')
           }
           style={styles.avatar}
           resizeMode="cover"
