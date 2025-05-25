@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 
 const api = axios.create({
-  baseURL: 'http://192.168.100.155:3000',
+  baseURL: 'https://stockx-3vvh.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },
