@@ -26,7 +26,7 @@ import defaultProductImage from '../assets/images/default_product.png';
 import LoaderOverlay from '../components/LoaderOverlay';
 import { searchProducts } from '../lib/helpers/searchProducts';
 
-const BASE_URL = 'http://192.168.100.155:3000';
+const BASE_URL = 'https://stockx-3vvh.onrender.com';
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
