@@ -25,7 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 
-const BASE_URL = 'http://192.168.100.155:3000';
+const BASE_URL = 'https://stockx-3vvh.onrender.com';
 
 export default function AccountScreen() {
   const [userName, setUserName] = useState<string | null>(null);
