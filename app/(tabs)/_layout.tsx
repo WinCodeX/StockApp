@@ -1,18 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
+
 import colors from '../../theme/colors';
 import NetworkBanner from '../../components/NetworkBanner';
 
 export default function TabLayout() {
+  const [netStatus, setNetStatus] = useState<'online' | 'offline' | 'server_error'>('online');
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setNetStatus(state.isConnected ? 'online' : 'offline');
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
     <View style={{ flex: 1 }}>
-      {/* Banner floats just above the tab bar and curves with it */}
-      <View style={styles.bannerWrapper}>
-        <NetworkBanner />
-      </View>
-
       <Tabs
         screenOptions={({ route }) => ({
           tabBarShowLabel: true,
@@ -38,32 +44,17 @@ export default function TabLayout() {
             shadowRadius: 8,
             borderTopWidth: 0,
           },
-          tabBarIcon: ({ focused }) => {
+          tabBarIcon: ({ focused, color, size }) => {
             let iconName: keyof typeof Ionicons.glyphMap = 'ellipse-outline';
             switch (route.name) {
-              case 'index':
-                iconName = focused ? 'home' : 'home-outline';
-                break;
-              case 'product':
-                iconName = focused ? 'cube' : 'cube-outline';
-                break;
-              case 'sales':
-                iconName = focused ? 'trending-up' : 'trending-up-outline';
-                break;
-              case 'search':
-                iconName = focused ? 'search' : 'search-outline';
-                break;
-              case 'account':
-                iconName = focused ? 'person' : 'person-outline';
-                break;
+              case 'index': iconName = focused ? 'home' : 'home-outline'; break;
+              case 'product': iconName = focused ? 'cube' : 'cube-outline'; break;
+              case 'sales': iconName = focused ? 'trending-up' : 'trending-up-outline'; break;
+              case 'search': iconName = focused ? 'search' : 'search-outline'; break;
+              case 'account': iconName = focused ? 'person' : 'person-outline'; break;
             }
-
             return (
-              <Ionicons
-                name={iconName}
-                size={24}
-                color={focused ? colors.primary : '#6772d4'}
-              />
+              <Ionicons name={iconName} size={24} color={focused ? colors.primary : '#6772d4'} />
             );
           },
           tabBarActiveTintColor: colors.primary,
@@ -76,16 +67,9 @@ export default function TabLayout() {
         <Tabs.Screen name="search" options={{ title: 'Search', tabBarLabel: 'Search' }} />
         <Tabs.Screen name="account" options={{ title: 'Account', tabBarLabel: 'Account' }} />
       </Tabs>
+
+      {/* Floating Banner above tab bar */}
+      <NetworkBanner status={netStatus} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  bannerWrapper: {
-    position: 'absolute',
-    bottom: 60, // exactly at the top edge of the tab bar
-    left: 20,
-    right: 20,
-    zIndex: 999,
-  },
-});
