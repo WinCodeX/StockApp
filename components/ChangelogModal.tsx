@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CHANGELOG_VERSION = '1.0.2';
+const CHANGELOG_VERSION = '1.2.1';
 const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 
 export default function ChangelogModal() {
