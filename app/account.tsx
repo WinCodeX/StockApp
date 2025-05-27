@@ -26,7 +26,7 @@ import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 
 const BASE_URL = 'https://stockx-3vvh.onrender.com';
-const CHANGELOG_VERSION = '1.0.2';
+const CHANGELOG_VERSION = '1.2.2';
 const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 
 export default function AccountScreen() {
