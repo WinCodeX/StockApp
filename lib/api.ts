@@ -1,8 +1,10 @@
 // lib/api.ts
+
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import NetInfo from '@react-native-community/netinfo';
 
 const api = axios.create({
   baseURL: 'https://stockx-3vvh.onrender.com',
@@ -20,24 +22,36 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Handle expired token globally
+// Handle responses and errors
 api.interceptors.response.use(
   response => response,
   async error => {
+    // Session expired
     if (error.response?.status === 401) {
       await SecureStore.deleteItemAsync('auth_token');
 
       Toast.show({
-        type: 'error',
+        type: 'warningToast',
         text1: 'Session expired',
-        text2: 'Please log in to continue.',
       });
 
       setTimeout(() => {
         router.replace('/login');
-      }, 2000); // small delay for the toast to show
+      }, 2000);
 
       return;
+    }
+
+    // Check network status for offline handling
+    const net = await NetInfo.fetch();
+    const offline = !net.isConnected || error.message === 'Network Error';
+
+    if (offline) {
+      Toast.show({
+        type: 'errorToast',
+        text1: 'You are offline',
+        text2: 'Some features may not work until connection is restored.',
+      });
     }
 
     return Promise.reject(error);
