@@ -1,32 +1,31 @@
-// lib/api.ts
-
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
 
-const BASE_URLS = [
-  'http://192.168.100.73:3000',               // Local dev (Wi-Fi)
-  'https://stockx-3vvh.onrender.com',         // Cloud fallback
-];
+const BASE_URL = 'https://stockx-3vvh.onrender.com';
 
-let currentIndex = 0;
-
-// Create axios instance
 const api = axios.create({
-  baseURL: BASE_URLS[currentIndex],
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Automatically switch baseURL on error
+// Inject token into every request
+api.interceptors.request.use(async (config) => {
+  const token = await SecureStore.getItemAsync('auth_token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle responses and errors
 api.interceptors.response.use(
   response => response,
   async error => {
-    const originalRequest = error.config;
-
     // 1. Session expired
     if (error.response?.status === 401) {
       await SecureStore.deleteItemAsync('auth_token');
@@ -53,27 +52,10 @@ api.interceptors.response.use(
         text1: 'You are offline',
         text2: 'Some features may not work until you’re back online.',
       });
-      return Promise.reject(error);
-    }
-
-    // 3. Try switching to fallback baseURL
-    if (currentIndex < BASE_URLS.length - 1) {
-      currentIndex++;
-      originalRequest.baseURL = BASE_URLS[currentIndex];
-      return api(originalRequest); // Retry request with next baseURL
     }
 
     return Promise.reject(error);
   }
 );
-
-// Token injection
-api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('auth_token');
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 export default api;
