@@ -7,28 +7,27 @@ import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
 
 const BASE_URLS = [
-  'http://192.168.100.73:3000',  // Laptop on Wifi,   
-'https://stockx-3vvh.onrender.com',// (Optional) fallback via virtual bridge
+  'http://192.168.100.73:3000',               // Local dev (Wi-Fi)
+  'https://stockx-3vvh.onrender.com',         // Cloud fallback
 ];
+
+let currentIndex = 0;
+
+// Create axios instance
+const api = axios.create({
+  baseURL: BASE_URLS[currentIndex],
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Inject token into every request
-api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('auth_token');
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Handle responses and errors
+// Automatically switch baseURL on error
 api.interceptors.response.use(
   response => response,
   async error => {
-    // Session expired
+    const originalRequest = error.config;
+
+    // 1. Session expired
     if (error.response?.status === 401) {
       await SecureStore.deleteItemAsync('auth_token');
 
@@ -44,20 +43,37 @@ api.interceptors.response.use(
       return;
     }
 
-    // Check network status for offline handling
+    // 2. Offline handling
     const net = await NetInfo.fetch();
-    const offline = !net.isConnected || error.message === 'Network Error';
+    const isOffline = !net.isConnected || error.message === 'Network Error';
 
-    if (offline) {
+    if (isOffline) {
       Toast.show({
         type: 'errorToast',
         text1: 'You are offline',
-        text2: 'Some features may not work until connection is restored.',
+        text2: 'Some features may not work until you’re back online.',
       });
+      return Promise.reject(error);
+    }
+
+    // 3. Try switching to fallback baseURL
+    if (currentIndex < BASE_URLS.length - 1) {
+      currentIndex++;
+      originalRequest.baseURL = BASE_URLS[currentIndex];
+      return api(originalRequest); // Retry request with next baseURL
     }
 
     return Promise.reject(error);
   }
 );
+
+// Token injection
+api.interceptors.request.use(async (config) => {
+  const token = await SecureStore.getItemAsync('auth_token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export default api;
