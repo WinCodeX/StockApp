@@ -6,8 +6,10 @@ import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
 
-const api = axios.create({
-  baseURL: 'https://stockx-3vvh.onrender.com',
+const BASE_URLS = [
+  'http://192.168.100.73:3000',  // Laptop on Wifi,   
+'https://stockx-3vvh.onrender.com',// (Optional) fallback via virtual bridge
+];
   headers: {
     'Content-Type': 'application/json',
   },
