@@ -1,14 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import colors from '../../theme/colors';
-import NetworkBanner from '../../components/NetworkBanner'; // <- Import banner
+import NetworkBanner from '../../components/NetworkBanner';
 
 export default function TabLayout() {
   return (
-    <>
-      <NetworkBanner /> {/* <-- Place banner at the top */}
-
+    <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={({ route }) => ({
           tabBarShowLabel: true,
@@ -73,6 +72,21 @@ export default function TabLayout() {
         <Tabs.Screen name="search" options={{ title: 'Search', tabBarLabel: 'Search' }} />
         <Tabs.Screen name="account" options={{ title: 'Account', tabBarLabel: 'Account' }} />
       </Tabs>
-    </>
+
+      {/* Floating Banner just above the tab bar */}
+      <View style={styles.bannerWrapper}>
+        <NetworkBanner />
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  bannerWrapper: {
+    position: 'absolute',
+    bottom: 70, // slightly above the tab bar
+    left: 10,
+    right: 10,
+    zIndex: 999,
+  },
+});
