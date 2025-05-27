@@ -64,9 +64,12 @@ export default function ProductsScreen() {
       );
 
       setPage(meta.current_page + 1);
-      setHasMore(meta.has_more);
+      setHasMore(meta.has_more ?? false);
     } catch (err) {
-      Toast.show({ type: 'errorToast', text1: 'Failed to load products.' });
+      Toast.show({
+        type: 'warningToast',
+        text1: 'Showing offline data or none available.',
+      });
     } finally {
       setLoading(false);
       setIsFetchingMore(false);
@@ -145,7 +148,6 @@ export default function ProductsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
@@ -153,7 +155,6 @@ export default function ProductsScreen() {
         <Text style={styles.header}>Products</Text>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <MaterialCommunityIcons
           name="magnify"
@@ -170,7 +171,6 @@ export default function ProductsScreen() {
         />
       </View>
 
-      {/* Product List */}
       <FlatList
         data={products}
         keyExtractor={(item) => String(item.id)}
@@ -179,13 +179,11 @@ export default function ProductsScreen() {
         onEndReachedThreshold={0.4}
         refreshing={refreshing}
         onRefresh={onRefresh}
-        ListFooterComponent={
-          isFetchingMore ? <ActivityIndicator color="#bd93f9" /> : null
-        }
+        ListFooterComponent={isFetchingMore ? <ActivityIndicator color="#bd93f9" /> : null}
         ListEmptyComponent={
           !loading && (
             <Text style={{ color: '#999', textAlign: 'center', marginTop: 20 }}>
-              No products found.
+              No products found or offline.
             </Text>
           )
         }
@@ -224,7 +222,6 @@ export default function ProductsScreen() {
         )}
       />
 
-      {/* FAB and Modals */}
       <FAB
         icon="plus"
         style={styles.fab}
@@ -248,7 +245,7 @@ export default function ProductsScreen() {
         onSubmit={handleCreateProduct}
       />
 
-      <LoaderOverlay visible={loading} />
+      {loading && products.length === 0 && <LoaderOverlay visible />}
     </SafeAreaView>
   );
 }
