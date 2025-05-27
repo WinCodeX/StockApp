@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
   useCallback,
   useEffect,
@@ -11,7 +12,6 @@ import React, {
 } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -26,12 +26,15 @@ import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 
 const BASE_URL = 'https://stockx-3vvh.onrender.com';
+const CHANGELOG_VERSION = '1.0.2';
+const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 
 export default function AccountScreen() {
   const [userName, setUserName] = useState<string | null>(null);
   const [avatarUri, setAvatarUri] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
 
   const router = useRouter();
   const navigation = useNavigation();
@@ -49,8 +52,11 @@ export default function AccountScreen() {
         const user = await getUser();
         setUserName(user.username || '');
         setAvatarUri(user.avatar_url ? `${BASE_URL}${user.avatar_url}` : null);
+
+        const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
+        if (!seen) setShowChangelog(true);
       } catch {
-        Alert.alert('Error', 'Unable to load profile.');
+        Toast.show({ type: 'errorToast', text1: 'Failed to load profile.' });
       } finally {
         setLoading(false);
       }
@@ -71,7 +77,7 @@ export default function AccountScreen() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!perm.granted) {
-      return Alert.alert('Permission required', 'Please allow photo access.');
+      return Toast.show({ type: 'warningToast', text1: 'Photo access denied.' });
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -98,6 +104,11 @@ export default function AccountScreen() {
     router.replace('/login');
   };
 
+  const dismissChangelog = async () => {
+    await AsyncStorage.setItem(CHANGELOG_KEY, 'true');
+    setShowChangelog(false);
+  };
+
   if (loading) {
     return (
       <View style={styles.loader}>
@@ -108,6 +119,20 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {showChangelog && (
+        <View style={styles.changelogBanner}>
+          <Text style={styles.changelogTitle}>What's New (v1.0.2)</Text>
+          <Text style={styles.changelogText}>
+            • Improved offline profile{'\n'}
+            • New UI polish{'\n'}
+            • Bug fixes
+          </Text>
+          <TouchableOpacity onPress={dismissChangelog} style={styles.changelogClose}>
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Got it</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
@@ -183,7 +208,6 @@ export default function AccountScreen() {
     </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   loader: {
@@ -280,5 +304,35 @@ const styles = StyleSheet.create({
   confirmLabel: {
     color: '#ff5555',
     fontWeight: 'bold',
+  },
+  changelogBanner: {
+    backgroundColor: '#44475a',
+    margin: 16,
+    padding: 14,
+    borderRadius: 10,
+    elevation: 8,
+    position: 'absolute',
+    top: 60,
+    left: 10,
+    right: 10,
+    zIndex: 1000,
+  },
+  changelogTitle: {
+    fontWeight: 'bold',
+    color: '#bd93f9',
+    fontSize: 16,
+    marginBottom: 6,
+  },
+  changelogText: {
+    color: '#f8f8f2',
+    fontSize: 13,
+    marginBottom: 10,
+  },
+  changelogClose: {
+    backgroundColor: '#6272a4',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    alignSelf: 'flex-end',
   },
 });
