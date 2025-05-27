@@ -8,6 +8,11 @@ import NetworkBanner from '../../components/NetworkBanner';
 export default function TabLayout() {
   return (
     <View style={{ flex: 1 }}>
+      {/* Banner floats just above the tab bar and curves with it */}
+      <View style={styles.bannerWrapper}>
+        <NetworkBanner />
+      </View>
+
       <Tabs
         screenOptions={({ route }) => ({
           tabBarShowLabel: true,
@@ -33,9 +38,8 @@ export default function TabLayout() {
             shadowRadius: 8,
             borderTopWidth: 0,
           },
-          tabBarIcon: ({ focused, color, size }) => {
+          tabBarIcon: ({ focused }) => {
             let iconName: keyof typeof Ionicons.glyphMap = 'ellipse-outline';
-
             switch (route.name) {
               case 'index':
                 iconName = focused ? 'home' : 'home-outline';
@@ -72,11 +76,6 @@ export default function TabLayout() {
         <Tabs.Screen name="search" options={{ title: 'Search', tabBarLabel: 'Search' }} />
         <Tabs.Screen name="account" options={{ title: 'Account', tabBarLabel: 'Account' }} />
       </Tabs>
-
-      {/* Floating Banner just above the tab bar */}
-      <View style={styles.bannerWrapper}>
-        <NetworkBanner />
-      </View>
     </View>
   );
 }
@@ -84,9 +83,9 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   bannerWrapper: {
     position: 'absolute',
-    bottom: 70, // slightly above the tab bar
-    left: 10,
-    right: 10,
+    bottom: 60, // exactly at the top edge of the tab bar
+    left: 20,
+    right: 20,
     zIndex: 999,
   },
 });
