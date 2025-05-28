@@ -9,36 +9,33 @@ import {
 import { Button, Card } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import NetInfo from '@react-native-community/netinfo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import colors from '../../theme/colors';
 import HeaderBar from '../../components/HeaderBar';
 import { getProductStats } from '../../lib/helpers/getProductStats';
 import { getRecentSales } from '../../lib/helpers/getRecentSales';
+import ChangelogModal from '../../components/ChangelogModal';
+
+const CHANGELOG_VERSION = '1.0.2';
+const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 
 export default function Dashboard() {
   const router = useRouter();
 
-  const [stats, setStats] = useState<any>({ total_products: 0, low_stock: 0 });
+  const [stats, setStats] = useState<any | null>(null);
   const [recentSales, setRecentSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isConnected, setIsConnected] = useState(true);
+  const [showChangelog, setShowChangelog] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
-      setIsConnected(!!state.isConnected);
-    });
+    (async () => {
+      const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
+      if (!seen) setShowChangelog(true);
+    })();
 
-    return () => unsubscribe();
+    loadDashboardData();
   }, []);
-
-  useEffect(() => {
-    if (isConnected) {
-      loadDashboardData();
-    } else {
-      setLoading(false);
-    }
-  }, [isConnected]);
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -48,15 +45,22 @@ export default function Dashboard() {
         getRecentSales(),
       ]);
 
-      setStats(productStats || { total_products: 0, low_stock: 0 });
-      setRecentSales(sales || []);
+      if (productStats && sales) {
+        setStats(productStats);
+        setRecentSales(sales);
+      } else {
+        console.warn('[Dashboard] Missing data from API');
+      }
     } catch (error) {
       console.error('[Dashboard] Data fetch error:', error);
-      setStats({ total_products: 0, low_stock: 0 });
-      setRecentSales([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const dismissChangelog = async () => {
+    await AsyncStorage.setItem(CHANGELOG_KEY, 'true');
+    setShowChangelog(false);
   };
 
   const showErrorState = !loading && (!stats || recentSales.length === 0);
@@ -73,20 +77,17 @@ export default function Dashboard() {
         ) : showErrorState ? (
           <View style={{ marginTop: 32 }}>
             <Text style={styles.emptyText}>
-              {isConnected
-                ? 'No data found. Please add products or sales.'
-                : "You're offline. Please reconnect to load data."}
+              Data could not be loaded. Please try again.
             </Text>
           </View>
         ) : (
           <>
-            {/* Stats Row */}
+            {/* Stats */}
             <View style={styles.statsRow}>
               <Card style={styles.statCard}>
                 <Text style={styles.statLabel}>Total Products</Text>
                 <Text style={styles.statValue}>{stats.total_products}</Text>
               </Card>
-
               <Card style={styles.statCard}>
                 <Text style={styles.statLabel}>Low Stock</Text>
                 <Text style={styles.statValue}>{stats.low_stock}</Text>
@@ -95,7 +96,6 @@ export default function Dashboard() {
 
             {/* Recent Sales */}
             <Text style={styles.subtitle}>Recent Sales</Text>
-
             <FlatList
               data={recentSales}
               keyExtractor={(item) => String(item.id)}
@@ -119,7 +119,6 @@ export default function Dashboard() {
               >
                 View Products
               </Button>
-
               <Button
                 mode="outlined"
                 onPress={() => router.push('/(tabs)/sales')}
@@ -130,6 +129,8 @@ export default function Dashboard() {
           </>
         )}
       </View>
+
+      <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
     </SafeAreaView>
   );
 }
@@ -186,6 +187,7 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#999',
     textAlign: 'center',
+    fontSize: 15,
     marginTop: 20,
   },
   quickActions: {
