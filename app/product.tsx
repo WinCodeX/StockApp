@@ -8,7 +8,6 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
 } from 'react-native';
 import { Button, Card, FAB } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,6 +28,8 @@ import { searchProducts } from '../lib/helpers/searchProducts';
 const BASE_URL = 'https://stockx-3vvh.onrender.com';
 
 export default function ProductsScreen() {
+  const router = useRouter();
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,8 +43,7 @@ export default function ProductsScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
-  const router = useRouter();
-
+  // Fetch products on first load
   useEffect(() => {
     fetchProducts(1);
   }, []);
@@ -91,10 +91,12 @@ export default function ProductsScreen() {
 
   const handleSearch = (text: string) => {
     setSearchQuery(text);
+
     if (!text) {
       fetchProducts(1);
       return;
     }
+
     debouncedSearch(text);
   };
 
@@ -148,6 +150,9 @@ export default function ProductsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LoaderOverlay visible={loading && products.length === 0} />
+
+      {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
@@ -155,6 +160,7 @@ export default function ProductsScreen() {
         <Text style={styles.header}>Products</Text>
       </View>
 
+      {/* Search */}
       <View style={styles.searchContainer}>
         <MaterialCommunityIcons
           name="magnify"
@@ -171,6 +177,7 @@ export default function ProductsScreen() {
         />
       </View>
 
+      {/* Product List */}
       <FlatList
         data={products}
         keyExtractor={(item) => String(item.id)}
@@ -179,7 +186,9 @@ export default function ProductsScreen() {
         onEndReachedThreshold={0.4}
         refreshing={refreshing}
         onRefresh={onRefresh}
-        ListFooterComponent={isFetchingMore ? <ActivityIndicator color="#bd93f9" /> : null}
+        ListFooterComponent={
+          isFetchingMore ? <LoaderOverlay visible /> : null
+        }
         ListEmptyComponent={
           !loading && (
             <Text style={{ color: '#999', textAlign: 'center', marginTop: 20 }}>
@@ -199,11 +208,13 @@ export default function ProductsScreen() {
                 style={styles.image}
                 onError={() => console.log('Failed to load product image')}
               />
+
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{item.attributes.name}</Text>
                 <Text style={styles.subtitle}>Stock: {item.attributes.total_stock}</Text>
                 <Text style={styles.subtitle}>KES {item.attributes.price}</Text>
               </View>
+
               <View style={styles.counterButtons}>
                 <TouchableOpacity style={styles.counterButton}>
                   <Text style={styles.counterText}>-</Text>
@@ -214,6 +225,7 @@ export default function ProductsScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+
             <Card.Actions>
               <Button onPress={() => openViewStockModal(item)}>View Stock</Button>
               <Button onPress={() => openAddStockModal(item)}>Add Stock</Button>
@@ -222,6 +234,7 @@ export default function ProductsScreen() {
         )}
       />
 
+      {/* Floating Button */}
       <FAB
         icon="plus"
         style={styles.fab}
@@ -229,6 +242,7 @@ export default function ProductsScreen() {
         onPress={() => setCreateModalVisible(true)}
       />
 
+      {/* Bottom Sheet Modals */}
       <BottomSheetModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -244,8 +258,6 @@ export default function ProductsScreen() {
         onClose={() => setCreateModalVisible(false)}
         onSubmit={handleCreateProduct}
       />
-
-      {loading && products.length === 0 && <LoaderOverlay visible />}
     </SafeAreaView>
   );
 }
