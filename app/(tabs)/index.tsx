@@ -10,6 +10,7 @@ import { Button, Card } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 
 import colors from '../../theme/colors';
 import HeaderBar from '../../components/HeaderBar';
@@ -28,16 +29,31 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showChangelog, setShowChangelog] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
 
   useEffect(() => {
-    loadDashboardData();
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(!!state.isConnected);
+    });
 
     AsyncStorage.getItem(CHANGELOG_KEY).then(seen => {
       if (!seen) setShowChangelog(true);
     });
+
+    return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (isConnected) {
+      loadDashboardData();
+    } else {
+      setLoading(false);
+      setLoadError(true);
+    }
+  }, [isConnected]);
+
   const loadDashboardData = async () => {
+    setLoading(true);
     try {
       const productStats = await getProductStats();
       const sales = await getRecentSales();
