@@ -28,46 +28,47 @@ export default function Dashboard() {
   const [recentSales, setRecentSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showChangelog, setShowChangelog] = useState(false);
-  const [loadError, setLoadError] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
 
+  // Monitor network status and handle changelog popup
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsConnected(!!state.isConnected);
     });
 
-    AsyncStorage.getItem(CHANGELOG_KEY).then(seen => {
+    (async () => {
+      const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
       if (!seen) setShowChangelog(true);
-    });
+    })();
 
     return () => unsubscribe();
   }, []);
 
+  // Re-fetch data when connectivity changes
   useEffect(() => {
-    if (isConnected) {
-      loadDashboardData();
-    } else {
-      setLoading(false);
-      setLoadError(true);
-    }
+    loadDashboardData();
   }, [isConnected]);
 
+  // Fetch stats + sales
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const productStats = await getProductStats();
-      const sales = await getRecentSales();
+      const [productStats, sales] = await Promise.all([
+        getProductStats(),
+        getRecentSales(),
+      ]);
 
       if (productStats && sales) {
         setStats(productStats);
         setRecentSales(sales);
-        setLoadError(false);
       } else {
-        setLoadError(true);
+        console.warn('[Dashboard] Missing data from API');
       }
     } catch (error) {
-      console.error('Failed to load dashboard data', error);
-      setLoadError(true);
+      console.error('[Dashboard] Data fetch error:', error);
+      if (!isConnected) {
+        console.warn('[Dashboard] Device is offline.');
+      }
     } finally {
       setLoading(false);
     }
@@ -78,6 +79,8 @@ export default function Dashboard() {
     setShowChangelog(false);
   };
 
+  const showErrorState = !loading && (!stats || recentSales.length === 0);
+
   return (
     <SafeAreaView style={styles.container}>
       <HeaderBar />
@@ -87,10 +90,12 @@ export default function Dashboard() {
 
         {loading ? (
           <ActivityIndicator color={colors.primary} />
-        ) : loadError || !stats ? (
+        ) : showErrorState ? (
           <View style={{ marginTop: 32 }}>
             <Text style={styles.emptyText}>
-              You're offline or data couldn't load. Please try again later.
+              {isConnected
+                ? 'Data could not be loaded. Please try again.'
+                : "You're offline. Please reconnect to load data."}
             </Text>
           </View>
         ) : (
@@ -146,7 +151,6 @@ export default function Dashboard() {
         )}
       </View>
 
-      {/* Changelog Modal */}
       <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
     </SafeAreaView>
   );
