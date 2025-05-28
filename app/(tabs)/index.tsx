@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -24,18 +23,17 @@ const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 export default function Dashboard() {
   const router = useRouter();
 
-  const [stats, setStats] = useState(null);
-  const [recentSales, setRecentSales] = useState([]);
+  const [stats, setStats] = useState<any | null>(null);
+  const [recentSales, setRecentSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
 
     AsyncStorage.getItem(CHANGELOG_KEY).then(seen => {
-      if (!seen) {
-        setShowChangelog(true);
-      }
+      if (!seen) setShowChangelog(true);
     });
   }, []);
 
@@ -44,10 +42,16 @@ export default function Dashboard() {
       const productStats = await getProductStats();
       const sales = await getRecentSales();
 
-      setStats(productStats);
-      setRecentSales(sales);
+      if (productStats && sales) {
+        setStats(productStats);
+        setRecentSales(sales);
+        setLoadError(false);
+      } else {
+        setLoadError(true);
+      }
     } catch (error) {
       console.error('Failed to load dashboard data', error);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -61,12 +65,17 @@ export default function Dashboard() {
   return (
     <SafeAreaView style={styles.container}>
       <HeaderBar />
-
       <View style={styles.content}>
         <Text style={styles.title}>Welcome to StockApp</Text>
 
         {loading ? (
           <ActivityIndicator color={colors.primary} />
+        ) : loadError || !stats ? (
+          <View style={{ marginTop: 32 }}>
+            <Text style={styles.emptyText}>
+              You're offline or data couldn't load. Please try again later.
+            </Text>
+          </View>
         ) : (
           <>
             <View style={styles.statsRow}>
@@ -117,7 +126,6 @@ export default function Dashboard() {
         )}
       </View>
 
-      {/* Show modal changelog */}
       <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
     </SafeAreaView>
   );
@@ -175,6 +183,7 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#999',
     textAlign: 'center',
+    fontSize: 15,
     marginTop: 20,
   },
   quickActions: {
