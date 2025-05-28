@@ -17,6 +17,7 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { Avatar, Button, Dialog, Portal } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
@@ -31,7 +32,7 @@ const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 
 export default function AccountScreen() {
   const [userName, setUserName] = useState<string | null>(null);
-  const [avatarUri, setAvatarUri] = useState<string>();
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
@@ -50,8 +51,8 @@ export default function AccountScreen() {
     (async () => {
       try {
         const user = await getUser();
-        setUserName(user.username || '');
-        setAvatarUri(user.avatar_url ? `${BASE_URL}${user.avatar_url}` : null);
+        setUserName(user?.username || '');
+        setAvatarUri(user?.avatar_url ? `${BASE_URL}${user.avatar_url}` : null);
 
         const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
         if (!seen) setShowChangelog(true);
@@ -75,7 +76,6 @@ export default function AccountScreen() {
 
   const pickAndUploadAvatar = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
     if (!perm.granted) {
       return Toast.show({ type: 'warningToast', text1: 'Photo access denied.' });
     }
@@ -119,19 +119,26 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {showChangelog && (
-        <View style={styles.changelogBanner}>
-          <Text style={styles.changelogTitle}>What's New (v1.0.2)</Text>
-          <Text style={styles.changelogText}>
-            • Improved offline profile{'\n'}
-            • New UI polish{'\n'}
-            • Bug fixes
-          </Text>
-          <TouchableOpacity onPress={dismissChangelog} style={styles.changelogClose}>
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Got it</Text>
-          </TouchableOpacity>
+      <Modal
+        transparent
+        animationType="fade"
+        visible={showChangelog}
+        onRequestClose={dismissChangelog}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>What's New (v1.0.2)</Text>
+            <Text style={styles.modalText}>
+              • Improved offline profile{'\n'}
+              • New UI polish{'\n'}
+              • Bug fixes
+            </Text>
+            <TouchableOpacity onPress={dismissChangelog} style={styles.modalButton}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Got it</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
+      </Modal>
 
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -305,34 +312,34 @@ const styles = StyleSheet.create({
     color: '#ff5555',
     fontWeight: 'bold',
   },
-  changelogBanner: {
-    backgroundColor: '#44475a',
-    margin: 16,
-    padding: 14,
-    borderRadius: 10,
-    elevation: 8,
-    position: 'absolute',
-    top: 60,
-    left: 10,
-    right: 10,
-    zIndex: 1000,
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  changelogTitle: {
+  modalContent: {
+    backgroundColor: '#282a36',
+    padding: 20,
+    borderRadius: 12,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#bd93f9',
-    fontSize: 16,
-    marginBottom: 6,
-  },
-  changelogText: {
-    color: '#f8f8f2',
-    fontSize: 13,
     marginBottom: 10,
   },
-  changelogClose: {
-    backgroundColor: '#6272a4',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+  modalText: {
+    color: '#f8f8f2',
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  modalButton: {
     alignSelf: 'flex-end',
+    backgroundColor: '#6272a4',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 6,
   },
 });
