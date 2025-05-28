@@ -5,17 +5,21 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import { Button, Card } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import colors from '../../theme/colors';
 import HeaderBar from '../../components/HeaderBar';
 import { getProductStats } from '../../lib/helpers/getProductStats';
 import { getRecentSales } from '../../lib/helpers/getRecentSales';
+import ChangelogModal from '../../components/ChangelogModal';
+
+const CHANGELOG_VERSION = '1.0.2';
+const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 
 export default function Dashboard() {
   const router = useRouter();
@@ -23,9 +27,16 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [recentSales, setRecentSales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showChangelog, setShowChangelog] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
+
+    AsyncStorage.getItem(CHANGELOG_KEY).then(seen => {
+      if (!seen) {
+        setShowChangelog(true);
+      }
+    });
   }, []);
 
   const loadDashboardData = async () => {
@@ -42,6 +53,11 @@ export default function Dashboard() {
     }
   };
 
+  const dismissChangelog = async () => {
+    await AsyncStorage.setItem(CHANGELOG_KEY, 'true');
+    setShowChangelog(false);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <HeaderBar />
@@ -53,7 +69,6 @@ export default function Dashboard() {
           <ActivityIndicator color={colors.primary} />
         ) : (
           <>
-            {/* Product Stats */}
             <View style={styles.statsRow}>
               <Card style={styles.statCard}>
                 <Text style={styles.statLabel}>Total Products</Text>
@@ -66,7 +81,6 @@ export default function Dashboard() {
               </Card>
             </View>
 
-            {/* Recent Sales */}
             <Text style={styles.subtitle}>Recent Sales</Text>
 
             <FlatList
@@ -84,7 +98,6 @@ export default function Dashboard() {
               }
             />
 
-            {/* Quick Actions */}
             <View style={styles.quickActions}>
               <Button
                 mode="contained"
@@ -103,6 +116,9 @@ export default function Dashboard() {
           </>
         )}
       </View>
+
+      {/* Show modal changelog */}
+      <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
     </SafeAreaView>
   );
 }
