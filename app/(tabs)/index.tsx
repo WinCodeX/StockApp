@@ -65,6 +65,7 @@ export default function Dashboard() {
   return (
     <SafeAreaView style={styles.container}>
       <HeaderBar />
+
       <View style={styles.content}>
         <Text style={styles.title}>Welcome to StockApp</Text>
 
@@ -78,6 +79,7 @@ export default function Dashboard() {
           </View>
         ) : (
           <>
+            {/* Stats Row */}
             <View style={styles.statsRow}>
               <Card style={styles.statCard}>
                 <Text style={styles.statLabel}>Total Products</Text>
@@ -90,6 +92,7 @@ export default function Dashboard() {
               </Card>
             </View>
 
+            {/* Recent Sales */}
             <Text style={styles.subtitle}>Recent Sales</Text>
 
             <FlatList
@@ -107,6 +110,7 @@ export default function Dashboard() {
               }
             />
 
+            {/* Quick Actions */}
             <View style={styles.quickActions}>
               <Button
                 mode="contained"
@@ -126,6 +130,7 @@ export default function Dashboard() {
         )}
       </View>
 
+      {/* Changelog Modal */}
       <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
     </SafeAreaView>
   );
