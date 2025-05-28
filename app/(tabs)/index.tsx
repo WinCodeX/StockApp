@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import { Button, Card } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import NetInfo from '@react-native-community/netinfo';
 
 import colors from '../../theme/colors';
 import HeaderBar from '../../components/HeaderBar';
@@ -19,27 +19,47 @@ import { getRecentSales } from '../../lib/helpers/getRecentSales';
 export default function Dashboard() {
   const router = useRouter();
 
-  const [stats, setStats] = useState(null);
-  const [recentSales, setRecentSales] = useState([]);
+  const [stats, setStats] = useState<any>({ total_products: 0, low_stock: 0 });
+  const [recentSales, setRecentSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(true);
 
   useEffect(() => {
-    loadDashboardData();
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(!!state.isConnected);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const loadDashboardData = async () => {
-    try {
-      const productStats = await getProductStats();
-      const sales = await getRecentSales();
+  useEffect(() => {
+    if (isConnected) {
+      loadDashboardData();
+    } else {
+      setLoading(false);
+    }
+  }, [isConnected]);
 
-      setStats(productStats);
-      setRecentSales(sales);
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [productStats, sales] = await Promise.all([
+        getProductStats(),
+        getRecentSales(),
+      ]);
+
+      setStats(productStats || { total_products: 0, low_stock: 0 });
+      setRecentSales(sales || []);
     } catch (error) {
-      console.error('Failed to load dashboard data', error);
+      console.error('[Dashboard] Data fetch error:', error);
+      setStats({ total_products: 0, low_stock: 0 });
+      setRecentSales([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const showErrorState = !loading && (!stats || recentSales.length === 0);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -50,9 +70,17 @@ export default function Dashboard() {
 
         {loading ? (
           <ActivityIndicator color={colors.primary} />
+        ) : showErrorState ? (
+          <View style={{ marginTop: 32 }}>
+            <Text style={styles.emptyText}>
+              {isConnected
+                ? 'No data found. Please add products or sales.'
+                : "You're offline. Please reconnect to load data."}
+            </Text>
+          </View>
         ) : (
           <>
-            {/* Product Stats */}
+            {/* Stats Row */}
             <View style={styles.statsRow}>
               <Card style={styles.statCard}>
                 <Text style={styles.statLabel}>Total Products</Text>
