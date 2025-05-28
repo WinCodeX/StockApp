@@ -5,7 +5,7 @@ import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
 
 const LOCAL_BASE_1 = 'http://192.168.100.73:3000';
-const LOCAL_BASE_2 = 'http://192.168.122.1:3000';
+const LOCAL_BASE_2 = 'http://192.168.149.106:3000';
 const PROD_BASE = 'https://stockx-3vvh.onrender.com';
 
 let resolvedBaseUrl: string | null = null;
