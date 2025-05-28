@@ -51,10 +51,11 @@ const NetworkBanner = ({ status }: { status: StatusType }) => {
       ? 'You are offline'
       : status === 'server_error'
       ? 'Server is unreachable'
-      : 'You\'re back online';
+      : "You're back online";
 
   return (
     <Animated.View
+      pointerEvents="none" // ✅ Prevents blocking touch events
       style={[
         styles.banner,
         {
