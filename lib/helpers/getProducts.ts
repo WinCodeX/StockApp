@@ -1,6 +1,7 @@
 import api from '../api';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 
 // Generate a consistent key for offline cache
 const buildCacheKey = (page: number, query: string) => {
@@ -25,29 +26,38 @@ export const getProducts = async (
     params.query = query.trim();
   }
 
-  try {
-    const res = await api.get('/api/v1/products', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params,
-    });
+  const netState = await NetInfo.fetch();
 
-    const products = res.data.products.data;
-    const meta = res.data.meta;
+  // Attempt API request if online
+  if (netState.isConnected) {
+    try {
+      const res = await api.get('/api/v1/products', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params,
+      });
 
-    // Cache response for offline use
-    await AsyncStorage.setItem(cacheKey, JSON.stringify({ products, meta }));
+      const products = res.data.products.data;
+      const meta = res.data.meta;
 
-    return { products, meta };
-  } catch (error) {
-    const cached = await AsyncStorage.getItem(cacheKey);
+      // Cache response for offline use
+      await AsyncStorage.setItem(cacheKey, JSON.stringify({ products, meta }));
 
-    if (cached) {
-      const { products, meta } = JSON.parse(cached);
       return { products, meta };
+    } catch (error) {
+      // fall through to cache attempt
     }
-
-    throw error; // No cache and request failed
   }
+
+  // Try loading from cache if offline or request failed
+  const cached = await AsyncStorage.getItem(cacheKey);
+
+  if (cached) {
+    const { products, meta } = JSON.parse(cached);
+    return { products, meta };
+  }
+
+  // No cache and fetch failed
+  throw new Error('Unable to fetch products and no cached data found.');
 };
