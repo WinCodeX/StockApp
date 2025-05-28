@@ -4,14 +4,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -25,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
+import LoaderOverlay from '../components/LoaderOverlay';
 
 const BASE_URL = 'https://stockx-3vvh.onrender.com';
 const CHANGELOG_VERSION = '1.2.2';
@@ -109,16 +104,10 @@ export default function AccountScreen() {
     setShowChangelog(false);
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#bd93f9" />
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
+      <LoaderOverlay visible={loading} />
+
       <Modal
         transparent
         animationType="fade"
@@ -217,11 +206,6 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   container: {
     flex: 1,
     backgroundColor: '#1e1e2e',
