@@ -1,59 +1,53 @@
-// lib/helpers/getProducts.ts
+import api from '../api';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import api from "../api";
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// Helper to generate a consistent cache key based on page number and query
+// Generate a consistent key for offline cache
 const buildCacheKey = (page: number, query: string) => {
-  const trimmed = query.trim().toLowerCase().replace(/\s+/g, "_");
-  return `products_cache_page_${page}_${trimmed || "default"}`;
+  const trimmed = query.trim().toLowerCase().replace(/\s+/g, '_');
+  return `products_cache_page_${page}_${trimmed || 'default'}`;
 };
 
 export const getProducts = async (
   page: number = 1,
   perPage: number = 10,
-  query: string = ""
+  query: string = ''
 ) => {
-  const token = await SecureStore.getItemAsync("auth_token");
+  const token = await SecureStore.getItemAsync('auth_token');
+  const cacheKey = buildCacheKey(page, query);
 
-  const params: any = {
+  const params: Record<string, any> = {
     page,
     per_page: perPage,
   };
 
-  if (query.trim() !== "") {
-    params.query = query;
+  if (query.trim()) {
+    params.query = query.trim();
   }
 
-  const cacheKey = buildCacheKey(page, query);
-
   try {
-    // Try to fetch from the server
-    const res = await api.get("/api/v1/products", {
+    const res = await api.get('/api/v1/products', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
       params,
     });
 
-    const data = res.data.products.data;
+    const products = res.data.products.data;
     const meta = res.data.meta;
 
-    // Save the result to local storage for offline use
-    await AsyncStorage.setItem(cacheKey, JSON.stringify({ data, meta }));
+    // Cache response for offline use
+    await AsyncStorage.setItem(cacheKey, JSON.stringify({ products, meta }));
 
-    return { products: data, meta };
+    return { products, meta };
   } catch (error) {
-    // Fallback: Try to read from cache
     const cached = await AsyncStorage.getItem(cacheKey);
 
     if (cached) {
-      const { data, meta } = JSON.parse(cached);
-      return { products: data, meta };
+      const { products, meta } = JSON.parse(cached);
+      return { products, meta };
     }
 
-    // If no cache available, rethrow the error
-    throw error;
+    throw error; // No cache and request failed
   }
 };
