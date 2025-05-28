@@ -17,18 +17,14 @@ export const getProducts = async (
   const token = await SecureStore.getItemAsync('auth_token');
   const cacheKey = buildCacheKey(page, query);
 
-  const params: Record<string, any> = {
-    page,
-    per_page: perPage,
-  };
-
+  const params: Record<string, any> = { page, per_page: perPage };
   if (query.trim()) {
     params.query = query.trim();
   }
 
   const netState = await NetInfo.fetch();
 
-  // Attempt API request if online
+  // Attempt live API request if online
   if (netState.isConnected) {
     try {
       const res = await api.get('/api/v1/products', {
@@ -38,26 +34,38 @@ export const getProducts = async (
         params,
       });
 
-      const products = res.data.products.data;
-      const meta = res.data.meta;
+      const products = res.data.products.data || [];
+      const meta = res.data.products.meta || {};
 
-      // Cache response for offline use
-      await AsyncStorage.setItem(cacheKey, JSON.stringify({ products, meta }));
+      // ✅ Validate image_url format
+      const validated = products.map((product: any) => ({
+        ...product,
+        attributes: {
+          ...product.attributes,
+          image_url: product.attributes.image_url?.startsWith('/')
+            ? `${api.defaults.baseURL}${product.attributes.image_url}`
+            : product.attributes.image_url,
+        },
+      }));
 
-      return { products, meta };
+      // ✅ Cache for offline use
+      await AsyncStorage.setItem(cacheKey, JSON.stringify({ products: validated, meta }));
+
+      console.log('🌐 Using live API products');
+      return { products: validated, meta };
     } catch (error) {
-      // fall through to cache attempt
+      console.warn('❌ Live fetch failed. Will attempt cache fallback.');
     }
   }
 
-  // Try loading from cache if offline or request failed
+  // 🧊 Load from cache if offline or live fetch fails
   const cached = await AsyncStorage.getItem(cacheKey);
-
   if (cached) {
     const { products, meta } = JSON.parse(cached);
+    console.log('📦 Using cached products');
     return { products, meta };
   }
 
-  // No cache and fetch failed
+  // ❌ No data available
   throw new Error('Unable to fetch products and no cached data found.');
 };
