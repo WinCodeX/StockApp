@@ -47,7 +47,11 @@ export default function AccountScreen() {
       try {
         const user = await getUser();
         setUserName(user?.username || '');
-        setAvatarUri(user?.avatar_url ? `${BASE_URL}${user.avatar_url}` : null);
+
+        const normalizeUrl = (url: string | null) =>
+          url?.startsWith('http') ? url : `${BASE_URL}${url}`;
+
+        setAvatarUri(user?.avatar_url ? normalizeUrl(user.avatar_url) : null);
 
         const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
         if (!seen) setShowChangelog(true);
