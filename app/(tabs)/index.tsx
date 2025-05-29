@@ -17,7 +17,7 @@ import { getProductStats } from '../../lib/helpers/getProductStats';
 import { getRecentSales } from '../../lib/helpers/getRecentSales';
 import ChangelogModal from '../../components/ChangelogModal';
 
-const CHANGELOG_VERSION = '1.0.2';
+const CHANGELOG_VERSION = '1.2.3';
 const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 
 export default function Dashboard() {
