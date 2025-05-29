@@ -42,17 +42,17 @@ export default function ProductsScreen() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   useEffect(() => {
-    fetchProducts(1);
+    fetchProducts(1, false, true);
   }, []);
 
-  const fetchProducts = async (nextPage = 1, isLoadMore = false) => {
+  const fetchProducts = async (nextPage = 1, isLoadMore = false, forceRefresh = false) => {
     if (isLoadMore && (!hasMore || isFetchingMore)) return;
 
     if (!isLoadMore) setLoading(true);
     else setIsFetchingMore(true);
 
     try {
-      const { products: newProducts, meta } = await getProducts(nextPage);
+      const { products: newProducts, meta } = await getProducts(nextPage, forceRefresh);
 
       setProducts(prev =>
         isLoadMore && nextPage > 1
@@ -90,7 +90,7 @@ export default function ProductsScreen() {
     setSearchQuery(text);
 
     if (!text) {
-      fetchProducts(1);
+      fetchProducts(1, false, true);
       return;
     }
 
@@ -99,7 +99,7 @@ export default function ProductsScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchProducts(1);
+    await fetchProducts(1, false, true);
     setRefreshing(false);
   };
 
@@ -129,7 +129,7 @@ export default function ProductsScreen() {
       Toast.show({ type: 'successToast', text1: 'Stock added successfully!' });
       setModalVisible(false);
       setQuantity('');
-      fetchProducts(1);
+      await fetchProducts(1, false, true);
     } catch (error) {
       Toast.show({ type: 'errorToast', text1: 'Failed to add stock.' });
     }
@@ -139,7 +139,7 @@ export default function ProductsScreen() {
     try {
       await createProduct(product);
       Toast.show({ type: 'successToast', text1: 'Product created successfully!' });
-      fetchProducts(1);
+      await fetchProducts(1, false, true);
     } catch {
       Toast.show({ type: 'errorToast', text1: 'Failed to create product.' });
     }
@@ -149,7 +149,6 @@ export default function ProductsScreen() {
     <SafeAreaView style={styles.container}>
       <LoaderOverlay visible={loading && products.length === 0} />
 
-      {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
@@ -157,7 +156,6 @@ export default function ProductsScreen() {
         <Text style={styles.header}>Products</Text>
       </View>
 
-      {/* Search */}
       <View style={styles.searchContainer}>
         <MaterialCommunityIcons
           name="magnify"
@@ -174,7 +172,6 @@ export default function ProductsScreen() {
         />
       </View>
 
-      {/* Product List */}
       <FlatList
         data={products}
         keyExtractor={(item) => String(item.id)}
@@ -205,7 +202,6 @@ export default function ProductsScreen() {
                     : defaultProductImage
                 }
                 style={styles.image}
-                onError={() => console.log('Failed to load product image')}
                 resizeMode="cover"
               />
 
@@ -234,7 +230,6 @@ export default function ProductsScreen() {
         )}
       />
 
-      {/* FAB */}
       <FAB
         icon="plus"
         style={styles.fab}
@@ -242,7 +237,6 @@ export default function ProductsScreen() {
         onPress={() => setCreateModalVisible(true)}
       />
 
-      {/* Modals */}
       <BottomSheetModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
