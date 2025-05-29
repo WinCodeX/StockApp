@@ -3,8 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import colors from '../theme/colors';
 import { getUser } from '../lib/helpers/getUser';
-
-const BASE_URL = 'http://192.168.100.155:3000'; // make sure it's correct
+import { BASE_URL } from '../lib/api'; // ✅ Import centralized base URL
 
 export default function HeaderBar() {
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -14,8 +13,15 @@ export default function HeaderBar() {
     const loadAvatar = async () => {
       try {
         const user = await getUser();
-        if (user.avatar_url) {
-          setAvatar(`${BASE_URL}${user.avatar_url}`);
+        const avatarPath = user.avatar_url;
+
+        // ✅ Normalize URL: avoid double BASE_URL if already absolute
+        const normalized = avatarPath?.startsWith('http')
+          ? avatarPath
+          : `${BASE_URL}${avatarPath}`;
+
+        if (avatarPath) {
+          setAvatar(normalized);
         }
       } catch (error) {
         console.error('Avatar fetch failed', error);
@@ -37,6 +43,7 @@ export default function HeaderBar() {
           }
           style={styles.avatar}
           resizeMode="cover"
+          onError={() => setAvatar(null)}
         />
       </TouchableOpacity>
     </View>
@@ -63,6 +70,6 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#444', // in case image fails
+    backgroundColor: '#444',
   },
 });
