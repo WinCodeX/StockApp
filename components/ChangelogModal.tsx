@@ -6,6 +6,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CHANGELOG_VERSION = '1.2.3';
 const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
+const autoDismissDelay = 7000;
+
+const CHANGELOG_CONTENT = [
+  'Improved offline profile',
+  'New UI polish',
+  'Bug fixes',
+];
 
 export default function ChangelogModal() {
   const [visible, setVisible] = useState(false);
@@ -15,7 +22,7 @@ export default function ChangelogModal() {
       const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
       if (!seen) {
         setVisible(true);
-        setTimeout(() => dismiss(), 7000); // auto-dismiss after 7 sec
+        setTimeout(() => dismiss(), autoDismissDelay);
       }
     })();
   }, []);
@@ -36,8 +43,10 @@ export default function ChangelogModal() {
     >
       <View style={styles.overlay}>
         <View style={styles.modal}>
-          <Text style={styles.title}>What's New (v1.0.2)</Text>
-          <Text style={styles.text}>• Improved offline profile{"\n"}• UI polish{"\n"}• Bug fixes</Text>
+          <Text style={styles.title}>{`What's New (v${CHANGELOG_VERSION})`}</Text>
+          <Text style={styles.text}>
+            {CHANGELOG_CONTENT.map((item, index) => `• ${item}${index !== CHANGELOG_CONTENT.length - 1 ? '\n' : ''}`)}
+          </Text>
           <TouchableOpacity onPress={dismiss} style={styles.button}>
             <Text style={styles.buttonText}>Got it</Text>
           </TouchableOpacity>
