@@ -9,10 +9,12 @@ const buildCacheKey = (page: number, query: string) => {
   return `products_cache_page_${page}_${trimmed || 'default'}`;
 };
 
+// 🔥 Added forceRefresh param
 export const getProducts = async (
   page: number = 1,
   perPage: number = 10,
-  query: string = ''
+  query: string = '',
+  forceRefresh: boolean = false // 🔥 New param
 ) => {
   const token = await SecureStore.getItemAsync('auth_token');
   const cacheKey = buildCacheKey(page, query);
@@ -23,6 +25,38 @@ export const getProducts = async (
   }
 
   const netState = await NetInfo.fetch();
+
+  // 🔥 Force refresh logic - always fetch live data if connected and forced
+  if (netState.isConnected && forceRefresh) {
+    try {
+      const res = await api.get('/api/v1/products', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params,
+      });
+
+      const products = res.data.products.data || [];
+      const meta = res.data.products.meta || {};
+
+      const validated = products.map((product: any) => ({
+        ...product,
+        attributes: {
+          ...product.attributes,
+          image_url: product.attributes.image_url?.startsWith('/')
+            ? `${api.defaults.baseURL}${product.attributes.image_url}`
+            : product.attributes.image_url,
+        },
+      }));
+
+      // 🔥 Cache updated fresh result
+      await AsyncStorage.setItem(cacheKey, JSON.stringify({ products: validated, meta }));
+      console.log('🔥 Forced refresh - using live API products');
+      return { products: validated, meta };
+    } catch (error) {
+      console.warn('🔥 Force refresh failed - fallback to normal or cache');
+    }
+  }
 
   // Attempt live API request if online
   if (netState.isConnected) {
