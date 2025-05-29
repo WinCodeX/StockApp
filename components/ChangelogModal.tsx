@@ -1,36 +1,31 @@
 // components/ChangelogModal.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CHANGELOG_VERSION = '1.2.3';
-const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 const autoDismissDelay = 7000;
 
+const CHANGELOG_VERSION = '1.2.3';
 const CHANGELOG_CONTENT = [
   'Improved offline profile',
   'New UI polish',
   'Bug fixes',
 ];
 
-export default function ChangelogModal() {
-  const [visible, setVisible] = useState(false);
+type Props = {
+  visible: boolean;
+  onClose: () => void;
+};
 
+export default function ChangelogModal({ visible, onClose }: Props) {
   useEffect(() => {
-    (async () => {
-      const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
-      if (!seen) {
-        setVisible(true);
-        setTimeout(() => dismiss(), autoDismissDelay);
-      }
-    })();
-  }, []);
-
-  const dismiss = async () => {
-    await AsyncStorage.setItem(CHANGELOG_KEY, 'true');
-    setVisible(false);
-  };
+    if (visible) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, autoDismissDelay);
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -39,15 +34,17 @@ export default function ChangelogModal() {
       transparent
       animationType="fade"
       visible={visible}
-      onRequestClose={dismiss}
+      onRequestClose={onClose}
     >
       <View style={styles.overlay}>
         <View style={styles.modal}>
           <Text style={styles.title}>{`What's New (v${CHANGELOG_VERSION})`}</Text>
           <Text style={styles.text}>
-            {CHANGELOG_CONTENT.map((item, index) => `• ${item}${index !== CHANGELOG_CONTENT.length - 1 ? '\n' : ''}`)}
+            {CHANGELOG_CONTENT.map((item, index) =>
+              `• ${item}${index !== CHANGELOG_CONTENT.length - 1 ? '\n' : ''}`
+            )}
           </Text>
-          <TouchableOpacity onPress={dismiss} style={styles.button}>
+          <TouchableOpacity onPress={onClose} style={styles.button}>
             <Text style={styles.buttonText}>Got it</Text>
           </TouchableOpacity>
         </View>
@@ -55,41 +52,3 @@ export default function ChangelogModal() {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modal: {
-    backgroundColor: '#282a36',
-    padding: 20,
-    borderRadius: 12,
-    width: '80%',
-    elevation: 10,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#bd93f9',
-    marginBottom: 10,
-  },
-  text: {
-    color: '#f8f8f2',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  button: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#6272a4',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-});
