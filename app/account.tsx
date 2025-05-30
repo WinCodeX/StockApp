@@ -115,19 +115,25 @@ export default function AccountScreen() {
     <SafeAreaView style={styles.container}>
       <LoaderOverlay visible={loading} />
 
-      <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
+      {showChangelog && (
+        <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
+      )}
 
-      <BusinessModal
-        visible={showBusinessModal}
-        onClose={() => setShowBusinessModal(false)}
-        onCreate={loadProfile}
-      />
+      {showBusinessModal && (
+        <BusinessModal
+          visible={showBusinessModal}
+          onClose={() => setShowBusinessModal(false)}
+          onCreate={loadProfile}
+        />
+      )}
 
-      <JoinBusinessModal
-        visible={showJoinModal}
-        onClose={() => setShowJoinModal(false)}
-        onJoin={loadProfile}
-      />
+      {showJoinModal && (
+        <JoinBusinessModal
+          visible={showJoinModal}
+          onClose={() => setShowJoinModal(false)}
+          onJoin={loadProfile}
+        />
+      )}
 
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -148,7 +154,11 @@ export default function AccountScreen() {
             <TouchableOpacity onPress={pickAndUploadAvatar}>
               <Avatar.Image
                 size={60}
-                source={avatarUri ? { uri: avatarUri } : require('../assets/images/avatar_placeholder.png')}
+                source={
+                  avatarUri
+                    ? { uri: avatarUri }
+                    : require('../assets/images/avatar_placeholder.png')
+                }
                 onError={() => setAvatarUri(null)}
               />
             </TouchableOpacity>
@@ -159,8 +169,12 @@ export default function AccountScreen() {
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Business</Text>
           <View style={{ marginTop: 12, flexDirection: 'row', gap: 10 }}>
-            <Button mode="outlined" onPress={() => setShowBusinessModal(true)}>Create Business</Button>
-            <Button mode="outlined" onPress={() => setShowJoinModal(true)}>Join Business</Button>
+            <Button mode="outlined" onPress={() => setShowBusinessModal(true)}>
+              Create Business
+            </Button>
+            <Button mode="outlined" onPress={() => setShowJoinModal(true)}>
+              Join Business
+            </Button>
           </View>
         </View>
 
@@ -179,22 +193,47 @@ export default function AccountScreen() {
 
         {/* Logout */}
         <View style={styles.logoutCard}>
-          <TouchableOpacity style={styles.logoutButton} onPress={() => setShowLogoutConfirm(true)}>
-            <MaterialCommunityIcons name="logout" size={22} color="#ff6b6b" style={styles.logoutIcon} />
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => setShowLogoutConfirm(true)}
+          >
+            <MaterialCommunityIcons
+              name="logout"
+              size={22}
+              color="#ff6b6b"
+              style={styles.logoutIcon}
+            />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
 
         {/* Logout Confirm Dialog */}
         <Portal>
-          <Dialog visible={showLogoutConfirm} onDismiss={() => setShowLogoutConfirm(false)} style={styles.dialog}>
+          <Dialog
+            visible={showLogoutConfirm}
+            onDismiss={() => setShowLogoutConfirm(false)}
+            style={styles.dialog}
+          >
             <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
             <Dialog.Content>
               <Text style={styles.dialogText}>Are you sure you want to log out?</Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
-              <Button onPress={() => setShowLogoutConfirm(false)} style={styles.dialogCancel} labelStyle={styles.cancelLabel}>No</Button>
-              <Button mode="outlined" onPress={confirmLogout} style={styles.dialogConfirm} labelStyle={styles.confirmLabel}>Yes</Button>
+              <Button
+                onPress={() => setShowLogoutConfirm(false)}
+                style={styles.dialogCancel}
+                labelStyle={styles.cancelLabel}
+              >
+                No
+              </Button>
+              <Button
+                mode="outlined"
+                onPress={confirmLogout}
+                style={styles.dialogConfirm}
+                labelStyle={styles.confirmLabel}
+              >
+                Yes
+              </Button>
             </Dialog.Actions>
           </Dialog>
         </Portal>
