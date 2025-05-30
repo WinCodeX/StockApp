@@ -20,7 +20,6 @@ import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 import LoaderOverlay from '../components/LoaderOverlay';
 import ChangelogModal, { CHANGELOG_KEY, CHANGELOG_VERSION } from '../components/ChangelogModal';
-import { normalizeUrl } from '../lib/helpers/normalizeUrl';
 import BusinessModal from '../components/BusinessModal';
 
 export default function AccountScreen() {
