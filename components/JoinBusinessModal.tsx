@@ -10,7 +10,6 @@ import {
   Platform,
 } from 'react-native';
 import { Button } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 
 type Props = {
@@ -32,16 +31,12 @@ export default function JoinBusinessModal({ visible, onClose, onJoin }: Props) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.overlay}
+        style={styles.centeredOverlay}
       >
-        <View style={styles.sheet}>
-          <TouchableOpacity onPress={onClose} style={styles.dragHandleContainer}>
-            <MaterialCommunityIcons name="chevron-down" size={30} color="#bbb" />
-          </TouchableOpacity>
-
+        <View style={styles.modalBox}>
           <Text style={styles.title}>Join Business</Text>
 
           <TextInput
@@ -57,6 +52,10 @@ export default function JoinBusinessModal({ visible, onClose, onJoin }: Props) {
           <Button mode="contained" onPress={handleJoin} style={styles.button}>
             Join
           </Button>
+
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Text style={styles.closeText}>Cancel</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -64,27 +63,28 @@ export default function JoinBusinessModal({ visible, onClose, onJoin }: Props) {
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  centeredOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
   },
-  sheet: {
+  modalBox: {
+    width: '85%',
     backgroundColor: colors.background,
     padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '90%',
-  },
-  dragHandleContainer: {
-    alignItems: 'center',
-    marginBottom: 8,
+    borderRadius: 16,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#f8f8f2',
-    marginBottom: 10,
+    marginBottom: 12,
     textAlign: 'center',
   },
   input: {
@@ -98,6 +98,13 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: colors.primary,
+    marginTop: 8,
+  },
+  closeButton: {
     marginTop: 12,
+    alignSelf: 'center',
+  },
+  closeText: {
+    color: '#888',
   },
 });
