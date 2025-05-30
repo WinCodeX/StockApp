@@ -3,13 +3,14 @@
 import React, { useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 
-export const CHANGELOG_VERSION = '1.2.4';
+export const CHANGELOG_VERSION = '1.2.5';
 export const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 const autoDismissDelay = 7000;
 
 const CHANGELOG_CONTENT = [
   'Improved offline profile',
-  'Added business link generator', 
+  'Added business link generator',
+  'Added join button for business',
   'New UI polish',
   'Bug fixes',
 ];
