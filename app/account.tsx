@@ -21,6 +21,7 @@ import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 import LoaderOverlay from '../components/LoaderOverlay';
 import ChangelogModal, { CHANGELOG_KEY, CHANGELOG_VERSION } from '../components/ChangelogModal';
 import BusinessModal from '../components/BusinessModal';
+import JoinBusinessModal from '../components/JoinBusinessModal';
 
 export default function AccountScreen() {
   const [userName, setUserName] = useState<string | null>(null);
@@ -29,6 +30,7 @@ export default function AccountScreen() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [businessName, setBusinessName] = useState<string | null>(null);
 
   const router = useRouter();
@@ -109,6 +111,10 @@ export default function AccountScreen() {
     Toast.show({ type: 'successToast', text1: `Business '${name}' created.` });
   };
 
+  const handleJoinBusiness = (code: string) => {
+    Toast.show({ type: 'successToast', text1: `Joining with code ${code}...` });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <LoaderOverlay visible={loading} />
@@ -117,6 +123,11 @@ export default function AccountScreen() {
         visible={showBusinessModal}
         onClose={() => setShowBusinessModal(false)}
         onCreate={handleBusinessCreate}
+      />
+      <JoinBusinessModal
+        visible={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
+        onJoin={handleJoinBusiness}
       />
 
       <View style={styles.headerRow}>
@@ -161,22 +172,27 @@ export default function AccountScreen() {
               <TouchableOpacity
                 style={styles.inviteButton}
                 onPress={() =>
-                  Toast.show({
-                    type: 'infoToast',
-                    text1: 'Invite link logic coming soon!',
-                  })
+                  Toast.show({ type: 'infoToast', text1: 'Invite link logic coming soon!' })
                 }
               >
                 <Text style={styles.inviteButtonText}>Generate Invite Link</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={{ marginTop: 12 }}>
-              <Button mode="outlined" onPress={() => setShowBusinessModal(true)}>
-                Create Business
-              </Button>
+            <View style={{ marginTop: 12, flexDirection: 'row', gap: 10 }}>
+              <Button mode="outlined" onPress={() => setShowBusinessModal(true)}>Create Business</Button>
+              <Button mode="outlined" onPress={() => setShowJoinModal(true)}>Join Business</Button>
             </View>
           )}
+        </View>
+
+        {/* Businesses List */}
+        <View style={styles.identityCard}>
+          <Text style={styles.userName}>Your Businesses</Text>
+          <Text style={styles.teamLabel}>Owned:</Text>
+          <Text style={styles.teamMember}>• Stock Empire</Text>
+          <Text style={styles.teamLabel}>Joined:</Text>
+          <Text style={styles.teamMember}>• Fresh Mart</Text>
         </View>
 
         {/* Logout Section */}
@@ -195,7 +211,7 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Logout Confirmation */}
+        {/* Logout Dialog */}
         <Portal>
           <Dialog
             visible={showLogoutConfirm}
@@ -204,9 +220,7 @@ export default function AccountScreen() {
           >
             <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
             <Dialog.Content>
-              <Text style={styles.dialogText}>
-                Are you sure you want to log out?
-              </Text>
+              <Text style={styles.dialogText}>Are you sure you want to log out?</Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
               <Button
@@ -233,8 +247,10 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e1e2e' },
-
+  container: {
+    flex: 1,
+    backgroundColor: '#1e1e2e',
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -243,8 +259,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 10,
   },
-  header: { fontSize: 22, fontWeight: 'bold', color: '#bd93f9' },
-
+  header: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#bd93f9',
+  },
   identityCard: {
     backgroundColor: '#282a36',
     margin: 16,
@@ -273,17 +292,23 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 4,
   },
-
-  businessDetails: { marginTop: 10 },
+  businessDetails: {
+    marginTop: 10,
+  },
   businessName: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 6,
   },
-  teamLabel: { color: '#ccc', marginTop: 8 },
-  teamMember: { color: '#aaa', marginTop: 4 },
-
+  teamLabel: {
+    color: '#ccc',
+    marginTop: 8,
+  },
+  teamMember: {
+    color: '#aaa',
+    marginTop: 4,
+  },
   inviteButton: {
     marginTop: 12,
     backgroundColor: '#44475a',
@@ -295,7 +320,6 @@ const styles = StyleSheet.create({
     color: '#f8f8f2',
     fontWeight: 'bold',
   },
-
   logoutCard: {
     backgroundColor: '#282a36',
     margin: 16,
@@ -314,7 +338,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-
   dialog: {
     backgroundColor: '#282a36',
     borderRadius: 12,
