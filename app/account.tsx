@@ -21,6 +21,7 @@ import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 import LoaderOverlay from '../components/LoaderOverlay';
 import ChangelogModal, { CHANGELOG_KEY, CHANGELOG_VERSION } from '../components/ChangelogModal';
 import { normalizeUrl } from '../lib/helpers/normalizeUrl';
+import BusinessModal from '../components/BusinessModal';
 
 export default function AccountScreen() {
   const [userName, setUserName] = useState<string | null>(null);
@@ -28,6 +29,8 @@ export default function AccountScreen() {
   const [loading, setLoading] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [showBusinessModal, setShowBusinessModal] = useState(false);
+  const [businessName, setBusinessName] = useState<string | null>(null);
 
   const router = useRouter();
   const navigation = useNavigation();
@@ -45,6 +48,7 @@ export default function AccountScreen() {
         const user = await getUser();
         setUserName(user?.username || '');
         setAvatarUri(user?.avatar_url ? normalizeUrl(user.avatar_url) : null);
+        setBusinessName(user?.business?.name || null);
 
         const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
         if (!seen) setShowChangelog(true);
@@ -101,10 +105,20 @@ export default function AccountScreen() {
     setShowChangelog(false);
   };
 
+  const handleBusinessCreate = (name: string) => {
+    setBusinessName(name);
+    Toast.show({ type: 'successToast', text1: `Business '${name}' created.` });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <LoaderOverlay visible={loading} />
       <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
+      <BusinessModal
+        visible={showBusinessModal}
+        onClose={() => setShowBusinessModal(false)}
+        onCreate={handleBusinessCreate}
+      />
 
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -114,13 +128,13 @@ export default function AccountScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+        {/* Profile Info */}
         <View style={styles.identityCard}>
           <View style={styles.identityLeft}>
             <Text style={styles.userName}>{userName || 'No name'}</Text>
             <Text style={styles.accountType}>StockApp Account</Text>
             <Text style={{ color: '#999', marginTop: 4 }}>v{CHANGELOG_VERSION}</Text>
           </View>
-
           <TouchableOpacity onPress={pickAndUploadAvatar}>
             <Avatar.Image
               size={60}
@@ -134,6 +148,30 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Business Section */}
+        <View style={styles.identityCard}>
+          <Text style={styles.userName}>Business</Text>
+          {businessName ? (
+            <View>
+              <Text style={{ color: '#fff', marginTop: 6 }}>{businessName}</Text>
+              <Text style={{ color: '#ccc', marginTop: 12 }}>Team Members:</Text>
+              <Text style={{ color: '#aaa', marginTop: 4 }}>- You (Owner)</Text>
+
+              <TouchableOpacity
+                style={styles.inviteButton}
+                onPress={() => Toast.show({ type: 'infoToast', text1: 'Invite link logic coming soon!' })}
+              >
+                <Text style={{ color: '#f8f8f2' }}>Generate Invite Link</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Button mode="outlined" onPress={() => setShowBusinessModal(true)}>
+              Create Business
+            </Button>
+          )}
+        </View>
+
+        {/* Logout */}
         <View style={styles.logoutCard}>
           <TouchableOpacity
             style={styles.logoutButton}
@@ -149,6 +187,7 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Confirm Dialog */}
         <Portal>
           <Dialog
             visible={showLogoutConfirm}
@@ -206,9 +245,8 @@ const styles = StyleSheet.create({
     margin: 16,
     borderRadius: 12,
     padding: 16,
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
   identityLeft: {
     flexDirection: 'column',
@@ -222,6 +260,13 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 14,
     marginTop: 4,
+  },
+  inviteButton: {
+    marginTop: 12,
+    backgroundColor: '#44475a',
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
   },
   logoutCard: {
     backgroundColor: '#282a36',
