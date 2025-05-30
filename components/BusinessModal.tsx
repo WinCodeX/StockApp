@@ -1,6 +1,17 @@
-// components/BusinessModal.tsx
 import React, { useState } from 'react';
-import { Modal, View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { Button } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import colors from '../theme/colors';
 
 type Props = {
   visible: boolean;
@@ -19,27 +30,31 @@ export default function BusinessModal({ visible, onClose, onCreate }: Props) {
   };
 
   return (
-    <Modal transparent animationType="slide" visible={visible} onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Create Business</Text>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.overlay}
+      >
+        <View style={styles.sheet}>
+          <TouchableOpacity onPress={onClose} style={styles.dragHandleContainer}>
+            <MaterialCommunityIcons name="chevron-down" size={30} color="#bbb" />
+          </TouchableOpacity>
+
+          <Text style={styles.title}>Create New Business</Text>
+
           <TextInput
-            style={styles.input}
             placeholder="Business Name"
-            placeholderTextColor="#aaa"
+            placeholderTextColor="#888"
             value={name}
             onChangeText={setName}
+            style={styles.input}
           />
-          <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.cancel} onPress={onClose}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.create} onPress={handleCreate}>
-              <Text style={styles.createText}>Create</Text>
-            </TouchableOpacity>
-          </View>
+
+          <Button mode="contained" onPress={handleCreate} style={styles.button}>
+            Create
+          </Button>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -48,46 +63,37 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  container: {
-    backgroundColor: '#282a36',
+  sheet: {
+    backgroundColor: colors.background,
     padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '90%',
+  },
+  dragHandleContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
   },
   title: {
-    color: '#bd93f9',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 12,
+    color: '#f8f8f2',
+    marginBottom: 10,
+    textAlign: 'center',
   },
   input: {
+    backgroundColor: '#2a2a3d',
+    color: '#fff',
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#444',
-    borderRadius: 8,
-    padding: 10,
-    color: '#fff',
-    marginBottom: 20,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10,
-  },
-  cancel: {
-    padding: 10,
-  },
-  cancelText: {
-    color: '#999',
-  },
-  create: {
-    padding: 10,
-    backgroundColor: '#bd93f9',
-    borderRadius: 6,
-  },
-  createText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  button: {
+    backgroundColor: colors.primary,
+    marginTop: 12,
   },
 });
