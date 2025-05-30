@@ -15,10 +15,10 @@ import colors from '../../theme/colors';
 import HeaderBar from '../../components/HeaderBar';
 import { getProductStats } from '../../lib/helpers/getProductStats';
 import { getRecentSales } from '../../lib/helpers/getRecentSales';
-import ChangelogModal from '../../components/ChangelogModal';
-
-const CHANGELOG_VERSION = '1.2.3';
-const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
+import ChangelogModal, {
+  CHANGELOG_KEY,
+  CHANGELOG_VERSION,
+} from '../../components/ChangelogModal';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -35,9 +35,7 @@ export default function Dashboard() {
 
   const checkChangelog = async () => {
     const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
-    if (!seen) {
-      setShowChangelog(true);
-    }
+    if (!seen) setShowChangelog(true);
   };
 
   const dismissChangelog = async () => {
@@ -54,7 +52,6 @@ export default function Dashboard() {
       setRecentSales(sales);
     } catch (error) {
       console.error('Failed to load dashboard data', error);
-      // Fallback on error
       setStats({ total_products: 0, low_stock: 0 });
       setRecentSales([]);
     } finally {
@@ -65,7 +62,6 @@ export default function Dashboard() {
   return (
     <SafeAreaView style={styles.container}>
       <HeaderBar />
-
       <View style={styles.content}>
         <Text style={styles.title}>Welcome to StockApp</Text>
 
@@ -73,20 +69,17 @@ export default function Dashboard() {
           <ActivityIndicator color={colors.primary} />
         ) : (
           <>
-            {/* Product Stats */}
             <View style={styles.statsRow}>
               <Card style={styles.statCard}>
                 <Text style={styles.statLabel}>Total Products</Text>
                 <Text style={styles.statValue}>{stats.total_products}</Text>
               </Card>
-
               <Card style={styles.statCard}>
                 <Text style={styles.statLabel}>Low Stock</Text>
                 <Text style={styles.statValue}>{stats.low_stock}</Text>
               </Card>
             </View>
 
-            {/* Recent Sales */}
             <Text style={styles.subtitle}>Recent Sales</Text>
 
             <FlatList
@@ -104,19 +97,11 @@ export default function Dashboard() {
               }
             />
 
-            {/* Quick Actions */}
             <View style={styles.quickActions}>
-              <Button
-                mode="contained"
-                onPress={() => router.push('/(tabs)/product')}
-              >
+              <Button mode="contained" onPress={() => router.push('/(tabs)/product')}>
                 View Products
               </Button>
-
-              <Button
-                mode="outlined"
-                onPress={() => router.push('/(tabs)/sales')}
-              >
+              <Button mode="outlined" onPress={() => router.push('/(tabs)/sales')}>
                 Record Sale
               </Button>
             </View>
