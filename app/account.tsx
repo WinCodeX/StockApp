@@ -18,7 +18,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
-import { normalizeUrl } from '../lib/helpers/normalizeUrl';
 import LoaderOverlay from '../components/LoaderOverlay';
 import ChangelogModal, { CHANGELOG_KEY, CHANGELOG_VERSION } from '../components/ChangelogModal';
 import BusinessModal from '../components/BusinessModal';
