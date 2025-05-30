@@ -23,8 +23,9 @@ export default function BusinessModal({ visible, onClose, onCreate }: Props) {
   const [name, setName] = useState('');
 
   const handleCreate = () => {
-    if (!name.trim()) return;
-    onCreate(name.trim());
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    onCreate(trimmed);
     setName('');
     onClose();
   };
@@ -63,7 +64,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.1)', // Light overlay (adjust if needed)
   },
   sheet: {
     backgroundColor: colors.background,
