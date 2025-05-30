@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Button } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 
 type Props = {
@@ -22,21 +23,25 @@ export default function JoinBusinessModal({ visible, onClose, onJoin }: Props) {
   const [code, setCode] = useState('');
 
   const handleJoin = () => {
-    const trimmedCode = code.trim();
-    if (trimmedCode.length === 6) {
-      onJoin(trimmedCode);
+    const trimmed = code.trim();
+    if (trimmed.length === 6) {
+      onJoin(trimmed);
       setCode('');
       onClose();
     }
   };
 
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.centeredOverlay}
+        style={styles.overlay}
       >
-        <View style={styles.modalBox}>
+        <View style={styles.sheet}>
+          <TouchableOpacity onPress={onClose} style={styles.dragHandleContainer}>
+            <MaterialCommunityIcons name="chevron-down" size={30} color="#bbb" />
+          </TouchableOpacity>
+
           <Text style={styles.title}>Join Business</Text>
 
           <TextInput
@@ -52,10 +57,6 @@ export default function JoinBusinessModal({ visible, onClose, onJoin }: Props) {
           <Button mode="contained" onPress={handleJoin} style={styles.button}>
             Join
           </Button>
-
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeText}>Cancel</Text>
-          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -63,28 +64,27 @@ export default function JoinBusinessModal({ visible, onClose, onJoin }: Props) {
 }
 
 const styles = StyleSheet.create({
-  centeredOverlay: {
+  overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
-  modalBox: {
-    width: '85%',
+  sheet: {
     backgroundColor: colors.background,
     padding: 20,
-    borderRadius: 16,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '90%',
+  },
+  dragHandleContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#f8f8f2',
-    marginBottom: 12,
+    marginBottom: 10,
     textAlign: 'center',
   },
   input: {
@@ -98,13 +98,6 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: colors.primary,
-    marginTop: 8,
-  },
-  closeButton: {
     marginTop: 12,
-    alignSelf: 'center',
-  },
-  closeText: {
-    color: '#888',
   },
 });
