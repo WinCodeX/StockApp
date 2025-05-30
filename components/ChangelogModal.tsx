@@ -5,9 +5,10 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 const autoDismissDelay = 7000;
 
-const CHANGELOG_VERSION = '1.2.3';
+const CHANGELOG_VERSION = '1.2.4';
 const CHANGELOG_CONTENT = [
   'Improved offline profile',
+  'Added business link generator', 
   'New UI polish',
   'Bug fixes',
 ];
