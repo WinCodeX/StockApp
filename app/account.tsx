@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
+import { getBusinesses } from '../lib/helpers/business';
 import LoaderOverlay from '../components/LoaderOverlay';
 import ChangelogModal, { CHANGELOG_KEY, CHANGELOG_VERSION } from '../components/ChangelogModal';
 import BusinessModal from '../components/BusinessModal';
@@ -31,7 +32,8 @@ export default function AccountScreen() {
   const [showChangelog, setShowChangelog] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [businessName, setBusinessName] = useState<string | null>(null);
+  const [ownedBusinesses, setOwnedBusinesses] = useState<string[]>([]);
+  const [joinedBusinesses, setJoinedBusinesses] = useState<string[]>([]);
 
   const router = useRouter();
   const navigation = useNavigation();
@@ -48,11 +50,14 @@ export default function AccountScreen() {
       try {
         const user = await getUser();
         setUserName(user?.username || '');
-        setAvatarUri(user?.avatar_url ? normalizeUrl(user.avatar_url) : null);
-        setBusinessName(user?.business?.name || null);
+        setAvatarUri(user?.avatar_url || null);
 
         const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
         if (!seen) setShowChangelog(true);
+
+        const { owned, joined } = await getBusinesses();
+        setOwnedBusinesses(owned);
+        setJoinedBusinesses(joined);
       } catch {
         Toast.show({ type: 'errorToast', text1: 'Failed to load profile.' });
       } finally {
@@ -106,28 +111,22 @@ export default function AccountScreen() {
     setShowChangelog(false);
   };
 
-  const handleBusinessCreate = (name: string) => {
-    setBusinessName(name);
-    Toast.show({ type: 'successToast', text1: `Business '${name}' created.` });
-  };
-
-  const handleJoinBusiness = (code: string) => {
-    Toast.show({ type: 'successToast', text1: `Joining with code ${code}...` });
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <LoaderOverlay visible={loading} />
+
       <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
+
       <BusinessModal
         visible={showBusinessModal}
         onClose={() => setShowBusinessModal(false)}
-        onCreate={handleBusinessCreate}
+        onCreate={loadProfile}
       />
+
       <JoinBusinessModal
         visible={showJoinModal}
         onClose={() => setShowJoinModal(false)}
-        onJoin={handleJoinBusiness}
+        onJoin={loadProfile}
       />
 
       <View style={styles.headerRow}>
@@ -149,95 +148,53 @@ export default function AccountScreen() {
             <TouchableOpacity onPress={pickAndUploadAvatar}>
               <Avatar.Image
                 size={60}
-                source={
-                  avatarUri
-                    ? { uri: avatarUri }
-                    : require('../assets/images/avatar_placeholder.png')
-                }
+                source={avatarUri ? { uri: avatarUri } : require('../assets/images/avatar_placeholder.png')}
                 onError={() => setAvatarUri(null)}
               />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Business Section */}
+        {/* Business Options */}
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Business</Text>
-          {businessName ? (
-            <View style={styles.businessDetails}>
-              <Text style={styles.businessName}>{businessName}</Text>
-              <Text style={styles.teamLabel}>Team Members:</Text>
-              <Text style={styles.teamMember}>• You (Owner)</Text>
-
-              <TouchableOpacity
-                style={styles.inviteButton}
-                onPress={() =>
-                  Toast.show({ type: 'infoToast', text1: 'Invite link logic coming soon!' })
-                }
-              >
-                <Text style={styles.inviteButtonText}>Generate Invite Link</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={{ marginTop: 12, flexDirection: 'row', gap: 10 }}>
-              <Button mode="outlined" onPress={() => setShowBusinessModal(true)}>Create Business</Button>
-              <Button mode="outlined" onPress={() => setShowJoinModal(true)}>Join Business</Button>
-            </View>
-          )}
+          <View style={{ marginTop: 12, flexDirection: 'row', gap: 10 }}>
+            <Button mode="outlined" onPress={() => setShowBusinessModal(true)}>Create Business</Button>
+            <Button mode="outlined" onPress={() => setShowJoinModal(true)}>Join Business</Button>
+          </View>
         </View>
 
-        {/* Businesses List */}
+        {/* Business Lists */}
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Your Businesses</Text>
           <Text style={styles.teamLabel}>Owned:</Text>
-          <Text style={styles.teamMember}>• Stock Empire</Text>
+          {ownedBusinesses.map((biz, idx) => (
+            <Text key={`owned-${idx}`} style={styles.teamMember}>• {biz}</Text>
+          ))}
           <Text style={styles.teamLabel}>Joined:</Text>
-          <Text style={styles.teamMember}>• Fresh Mart</Text>
+          {joinedBusinesses.map((biz, idx) => (
+            <Text key={`joined-${idx}`} style={styles.teamMember}>• {biz}</Text>
+          ))}
         </View>
 
-        {/* Logout Section */}
+        {/* Logout */}
         <View style={styles.logoutCard}>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={() => setShowLogoutConfirm(true)}
-          >
-            <MaterialCommunityIcons
-              name="logout"
-              size={22}
-              color="#ff6b6b"
-              style={styles.logoutIcon}
-            />
+          <TouchableOpacity style={styles.logoutButton} onPress={() => setShowLogoutConfirm(true)}>
+            <MaterialCommunityIcons name="logout" size={22} color="#ff6b6b" style={styles.logoutIcon} />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Logout Dialog */}
+        {/* Logout Confirm Dialog */}
         <Portal>
-          <Dialog
-            visible={showLogoutConfirm}
-            onDismiss={() => setShowLogoutConfirm(false)}
-            style={styles.dialog}
-          >
+          <Dialog visible={showLogoutConfirm} onDismiss={() => setShowLogoutConfirm(false)} style={styles.dialog}>
             <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
             <Dialog.Content>
               <Text style={styles.dialogText}>Are you sure you want to log out?</Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
-              <Button
-                onPress={() => setShowLogoutConfirm(false)}
-                style={styles.dialogCancel}
-                labelStyle={styles.cancelLabel}
-              >
-                No
-              </Button>
-              <Button
-                mode="outlined"
-                onPress={confirmLogout}
-                style={styles.dialogConfirm}
-                labelStyle={styles.confirmLabel}
-              >
-                Yes
-              </Button>
+              <Button onPress={() => setShowLogoutConfirm(false)} style={styles.dialogCancel} labelStyle={styles.cancelLabel}>No</Button>
+              <Button mode="outlined" onPress={confirmLogout} style={styles.dialogConfirm} labelStyle={styles.confirmLabel}>Yes</Button>
             </Dialog.Actions>
           </Dialog>
         </Portal>
@@ -292,15 +249,6 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 4,
   },
-  businessDetails: {
-    marginTop: 10,
-  },
-  businessName: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
   teamLabel: {
     color: '#ccc',
     marginTop: 8,
@@ -308,17 +256,6 @@ const styles = StyleSheet.create({
   teamMember: {
     color: '#aaa',
     marginTop: 4,
-  },
-  inviteButton: {
-    marginTop: 12,
-    backgroundColor: '#44475a',
-    padding: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  inviteButtonText: {
-    color: '#f8f8f2',
-    fontWeight: 'bold',
   },
   logoutCard: {
     backgroundColor: '#282a36',
