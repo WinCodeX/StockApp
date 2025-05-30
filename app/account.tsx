@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
-  Modal,
 } from 'react-native';
 import { Avatar, Button, Dialog, Portal } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
@@ -20,10 +19,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getUser } from '../lib/helpers/getUser';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 import LoaderOverlay from '../components/LoaderOverlay';
-
-const BASE_URL = 'https://stockx-3vvh.onrender.com';
-const CHANGELOG_VERSION = '1.2.3';
-const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
+import ChangelogModal, { CHANGELOG_KEY, CHANGELOG_VERSION } from '../components/ChangelogModal';
+import { normalizeUrl } from '../lib/helpers/normalizeUrl';
 
 export default function AccountScreen() {
   const [userName, setUserName] = useState<string | null>(null);
@@ -47,10 +44,6 @@ export default function AccountScreen() {
       try {
         const user = await getUser();
         setUserName(user?.username || '');
-
-        const normalizeUrl = (url: string | null) =>
-          url?.startsWith('http') ? url : `${BASE_URL}${url}`;
-
         setAvatarUri(user?.avatar_url ? normalizeUrl(user.avatar_url) : null);
 
         const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
@@ -111,27 +104,7 @@ export default function AccountScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <LoaderOverlay visible={loading} />
-
-      <Modal
-        transparent
-        animationType="fade"
-        visible={showChangelog}
-        onRequestClose={dismissChangelog}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>What's New (v1.0.2)</Text>
-            <Text style={styles.modalText}>
-              • Improved offline profile{'\n'}
-              • New UI polish{'\n'}
-              • Bug fixes
-            </Text>
-            <TouchableOpacity onPress={dismissChangelog} style={styles.modalButton}>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Got it</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
 
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -145,6 +118,7 @@ export default function AccountScreen() {
           <View style={styles.identityLeft}>
             <Text style={styles.userName}>{userName || 'No name'}</Text>
             <Text style={styles.accountType}>StockApp Account</Text>
+            <Text style={{ color: '#999', marginTop: 4 }}>v{CHANGELOG_VERSION}</Text>
           </View>
 
           <TouchableOpacity onPress={pickAndUploadAvatar}>
@@ -299,35 +273,5 @@ const styles = StyleSheet.create({
   confirmLabel: {
     color: '#ff5555',
     fontWeight: 'bold',
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  modalContent: {
-    backgroundColor: '#282a36',
-    padding: 20,
-    borderRadius: 12,
-    width: '80%',
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#bd93f9',
-    marginBottom: 10,
-  },
-  modalText: {
-    color: '#f8f8f2',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  modalButton: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#6272a4',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 6,
   },
 });
