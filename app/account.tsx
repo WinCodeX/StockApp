@@ -49,17 +49,19 @@ export default function AccountScreen() {
     (async () => {
       try {
         const user = await getUser();
-        setUserName(user?.username || '');
+        setUserName(user?.username || 'No name');
         setAvatarUri(user?.avatar_url || null);
 
         const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
         if (!seen) setShowChangelog(true);
 
-        const { owned, joined } = await getBusinesses();
-        setOwnedBusinesses(owned);
-        setJoinedBusinesses(joined);
-      } catch {
+        const businesses = await getBusinesses();
+        setOwnedBusinesses(businesses?.owned || []);
+        setJoinedBusinesses(businesses?.joined || []);
+      } catch (error) {
         Toast.show({ type: 'errorToast', text1: 'Failed to load profile.' });
+        setOwnedBusinesses([]);
+        setJoinedBusinesses([]);
       } finally {
         setLoading(false);
       }
@@ -70,11 +72,16 @@ export default function AccountScreen() {
     loadProfile();
   }, [loadProfile]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadProfile();
-    }, [loadProfile])
-  );
+  useFocusEffect(useCallback(() => {
+    loadProfile();
+  }, [loadProfile]));
+
+  useEffect(() => {
+    const fallback = setTimeout(() => {
+      if (loading) setLoading(false);
+    }, 8000);
+    return () => clearTimeout(fallback);
+  }, [loading]);
 
   const pickAndUploadAvatar = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -143,11 +150,10 @@ export default function AccountScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Profile Section */}
         <View style={styles.identityCard}>
           <View style={styles.identityRow}>
             <View style={styles.identityLeft}>
-              <Text style={styles.userName}>{userName || 'No name'}</Text>
+              <Text style={styles.userName}>{userName}</Text>
               <Text style={styles.accountType}>StockApp Account</Text>
               <Text style={styles.version}>v{CHANGELOG_VERSION}</Text>
             </View>
@@ -165,7 +171,6 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* Business Options */}
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Business</Text>
           <View style={{ marginTop: 12, flexDirection: 'row', gap: 10 }}>
@@ -178,20 +183,18 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* Business Lists */}
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Your Businesses</Text>
           <Text style={styles.teamLabel}>Owned:</Text>
-          {ownedBusinesses.map((biz, idx) => (
+          {ownedBusinesses.length ? ownedBusinesses.map((biz, idx) => (
             <Text key={`owned-${idx}`} style={styles.teamMember}>• {biz}</Text>
-          ))}
+          )) : <Text style={styles.teamMember}>None</Text>}
           <Text style={styles.teamLabel}>Joined:</Text>
-          {joinedBusinesses.map((biz, idx) => (
+          {joinedBusinesses.length ? joinedBusinesses.map((biz, idx) => (
             <Text key={`joined-${idx}`} style={styles.teamMember}>• {biz}</Text>
-          ))}
+          )) : <Text style={styles.teamMember}>None</Text>}
         </View>
 
-        {/* Logout */}
         <View style={styles.logoutCard}>
           <TouchableOpacity
             style={styles.logoutButton}
@@ -207,7 +210,6 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Logout Confirm Dialog */}
         <Portal>
           <Dialog
             visible={showLogoutConfirm}
