@@ -1,10 +1,10 @@
-import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
-import { router } from 'expo-router';
-import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
+import axios from 'axios';
+import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import Toast from 'react-native-toast-message';
 
-const LOCAL_BASE_1 = 'http://192.168.100.73:3000';
+const LOCAL_BASE_1 = 'http://192.168.89.106:3000';
 const LOCAL_BASE_2 = 'http://192.168.149.106:3000';
 const PROD_BASE = 'https://stockx-3vvh.onrender.com';
 
