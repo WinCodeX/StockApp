@@ -24,6 +24,8 @@ import ChangelogModal, { CHANGELOG_KEY, CHANGELOG_VERSION } from '../components/
 import BusinessModal from '../components/BusinessModal';
 import JoinBusinessModal from '../components/JoinBusinessModal';
 
+type Business = { id: number; name: string };
+
 export default function AccountScreen() {
   const [userName, setUserName] = useState<string | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
@@ -32,8 +34,8 @@ export default function AccountScreen() {
   const [showChangelog, setShowChangelog] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [ownedBusinesses, setOwnedBusinesses] = useState<string[]>([]);
-  const [joinedBusinesses, setJoinedBusinesses] = useState<string[]>([]);
+  const [ownedBusinesses, setOwnedBusinesses] = useState<Business[]>([]);
+  const [joinedBusinesses, setJoinedBusinesses] = useState<Business[]>([]);
 
   const router = useRouter();
   const navigation = useNavigation();
@@ -186,12 +188,12 @@ export default function AccountScreen() {
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Your Businesses</Text>
           <Text style={styles.teamLabel}>Owned:</Text>
-          {ownedBusinesses.length ? ownedBusinesses.map((biz, idx) => (
-            <Text key={`owned-${idx}`} style={styles.teamMember}>• {biz}</Text>
+          {ownedBusinesses.length ? ownedBusinesses.map((biz) => (
+            <Text key={`owned-${biz.id}`} style={styles.teamMember}>• {biz.name}</Text>
           )) : <Text style={styles.teamMember}>None</Text>}
           <Text style={styles.teamLabel}>Joined:</Text>
-          {joinedBusinesses.length ? joinedBusinesses.map((biz, idx) => (
-            <Text key={`joined-${idx}`} style={styles.teamMember}>• {biz}</Text>
+          {joinedBusinesses.length ? joinedBusinesses.map((biz) => (
+            <Text key={`joined-${biz.id}`} style={styles.teamMember}>• {biz.name}</Text>
           )) : <Text style={styles.teamMember}>None</Text>}
         </View>
 
