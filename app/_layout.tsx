@@ -6,7 +6,7 @@ import Toast from 'react-native-toast-message';
 import { Provider as PaperProvider, MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 import { useColorScheme } from 'react-native';
 import { toastConfig } from '../lib/toastConfig';
-import { UserProvider } from '../contexts/UserContext'; // ✅ Import your context
+import { UserProvider } from '../context/UserContext'; // ✅ Import your context
 
 // Font config
 const fontConfig = {
