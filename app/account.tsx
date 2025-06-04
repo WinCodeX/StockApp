@@ -4,7 +4,12 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react';
 import {
   StyleSheet,
   Text,
@@ -16,18 +21,22 @@ import { Avatar, Button, Dialog, Portal } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getUser } from '../lib/helpers/getUser';
-import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 import { getBusinesses } from '../lib/helpers/business';
 import LoaderOverlay from '../components/LoaderOverlay';
-import ChangelogModal, { CHANGELOG_KEY, CHANGELOG_VERSION } from '../components/ChangelogModal';
+import ChangelogModal, {
+  CHANGELOG_KEY,
+  CHANGELOG_VERSION,
+} from '../components/ChangelogModal';
 import BusinessModal from '../components/BusinessModal';
 import JoinBusinessModal from '../components/JoinBusinessModal';
+import AvatarPreviewModal from '../components/AvatarPreviewModal';
+import { useUser } from '../contexts/UserContext';
+import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 
 type Business = { id: number; name: string };
 
 export default function AccountScreen() {
-  const [userName, setUserName] = useState<string | null>(null);
+  const { user, refreshUser } = useUser();
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -36,6 +45,7 @@ export default function AccountScreen() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [ownedBusinesses, setOwnedBusinesses] = useState<Business[]>([]);
   const [joinedBusinesses, setJoinedBusinesses] = useState<Business[]>([]);
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
 
   const router = useRouter();
   const navigation = useNavigation();
@@ -50,10 +60,6 @@ export default function AccountScreen() {
   const loadProfile = useCallback(() => {
     (async () => {
       try {
-        const user = await getUser();
-        setUserName(user?.username || 'No name');
-        setAvatarUri(user?.avatar_url || null);
-
         const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
         if (!seen) setShowChangelog(true);
 
@@ -74,9 +80,11 @@ export default function AccountScreen() {
     loadProfile();
   }, [loadProfile]);
 
-  useFocusEffect(useCallback(() => {
-    loadProfile();
-  }, [loadProfile]));
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile])
+  );
 
   useEffect(() => {
     const fallback = setTimeout(() => {
@@ -85,10 +93,13 @@ export default function AccountScreen() {
     return () => clearTimeout(fallback);
   }, [loading]);
 
-  const pickAndUploadAvatar = async () => {
+  const pickAndPreviewAvatar = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      return Toast.show({ type: 'warningToast', text1: 'Photo access denied.' });
+      return Toast.show({
+        type: 'warningToast',
+        text1: 'Photo access denied.',
+      });
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -99,12 +110,20 @@ export default function AccountScreen() {
 
     if (result.canceled || !result.assets?.length) return;
 
+    setPreviewUri(result.assets[0].uri);
+  };
+
+  const confirmUploadAvatar = async () => {
+    if (!previewUri) return;
     try {
-      await uploadAvatar(result.assets[0].uri);
+      await uploadAvatar(previewUri);
       Toast.show({ type: 'successToast', text1: 'Avatar updated!' });
+      refreshUser();
       loadProfile();
     } catch {
       Toast.show({ type: 'errorToast', text1: 'Upload failed.' });
+    } finally {
+      setPreviewUri(null);
     }
   };
 
@@ -144,9 +163,22 @@ export default function AccountScreen() {
         />
       )}
 
+      {previewUri && (
+        <AvatarPreviewModal
+          visible={!!previewUri}
+          uri={previewUri}
+          onCancel={() => setPreviewUri(null)}
+          onConfirm={confirmUploadAvatar}
+        />
+      )}
+
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color="#bd93f9"
+          />
         </TouchableOpacity>
         <Text style={styles.header}>Account</Text>
       </View>
@@ -155,19 +187,20 @@ export default function AccountScreen() {
         <View style={styles.identityCard}>
           <View style={styles.identityRow}>
             <View style={styles.identityLeft}>
-              <Text style={styles.userName}>{userName}</Text>
+              <Text style={styles.userName}>
+                {user?.username || 'No name'}
+              </Text>
               <Text style={styles.accountType}>StockApp Account</Text>
               <Text style={styles.version}>v{CHANGELOG_VERSION}</Text>
             </View>
-            <TouchableOpacity onPress={pickAndUploadAvatar}>
+            <TouchableOpacity onPress={pickAndPreviewAvatar}>
               <Avatar.Image
                 size={60}
                 source={
-                  avatarUri
-                    ? { uri: avatarUri }
+                  user?.avatar_url
+                    ? { uri: user.avatar_url }
                     : require('../assets/images/avatar_placeholder.png')
                 }
-                onError={() => setAvatarUri(null)}
               />
             </TouchableOpacity>
           </View>
@@ -188,13 +221,25 @@ export default function AccountScreen() {
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Your Businesses</Text>
           <Text style={styles.teamLabel}>Owned:</Text>
-          {ownedBusinesses.length ? ownedBusinesses.map((biz) => (
-            <Text key={`owned-${biz.id}`} style={styles.teamMember}>• {biz.name}</Text>
-          )) : <Text style={styles.teamMember}>None</Text>}
+          {ownedBusinesses.length ? (
+            ownedBusinesses.map((biz) => (
+              <Text key={`owned-${biz.id}`} style={styles.teamMember}>
+                • {biz.name}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.teamMember}>None</Text>
+          )}
           <Text style={styles.teamLabel}>Joined:</Text>
-          {joinedBusinesses.length ? joinedBusinesses.map((biz) => (
-            <Text key={`joined-${biz.id}`} style={styles.teamMember}>• {biz.name}</Text>
-          )) : <Text style={styles.teamMember}>None</Text>}
+          {joinedBusinesses.length ? (
+            joinedBusinesses.map((biz) => (
+              <Text key={`joined-${biz.id}`} style={styles.teamMember}>
+                • {biz.name}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.teamMember}>None</Text>
+          )}
         </View>
 
         <View style={styles.logoutCard}>
@@ -218,9 +263,13 @@ export default function AccountScreen() {
             onDismiss={() => setShowLogoutConfirm(false)}
             style={styles.dialog}
           >
-            <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
+            <Dialog.Title style={styles.dialogTitle}>
+              Confirm Logout
+            </Dialog.Title>
             <Dialog.Content>
-              <Text style={styles.dialogText}>Are you sure you want to log out?</Text>
+              <Text style={styles.dialogText}>
+                Are you sure you want to log out?
+              </Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
               <Button
