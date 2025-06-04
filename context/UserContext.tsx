@@ -1,22 +1,45 @@
-// context/UserContext.tsx
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useState,
+  useEffect,
+} from 'react';
+import { getUser } from '../lib/helpers/getUser';
 
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+type User = {
+  username: string;
+  avatar_url: string | null;
+  // Add more fields as needed
+};
 
 type UserContextType = {
-  refreshUser: () => void;
+  user: User | null;
+  refreshUser: () => Promise<void>;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [_, setRefreshTrigger] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
-  const refreshUser = () => {
-    setRefreshTrigger(prev => !prev);
+  const refreshUser = async () => {
+    try {
+      const fetchedUser = await getUser();
+      setUser(fetchedUser || null);
+    } catch (err) {
+      console.error('Failed to fetch user:', err);
+      setUser(null);
+    }
   };
 
+  // Initial load
+  useEffect(() => {
+    refreshUser();
+  }, []);
+
   return (
-    <UserContext.Provider value={{ refreshUser }}>
+    <UserContext.Provider value={{ user, refreshUser }}>
       {children}
     </UserContext.Provider>
   );
