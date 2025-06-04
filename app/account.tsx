@@ -30,7 +30,7 @@ import ChangelogModal, {
 import BusinessModal from '../components/BusinessModal';
 import JoinBusinessModal from '../components/JoinBusinessModal';
 import AvatarPreviewModal from '../components/AvatarPreviewModal';
-import { useUser } from '../contexts/UserContext';
+import { useUser } from '../context/UserContext';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 
 type Business = { id: number; name: string };
