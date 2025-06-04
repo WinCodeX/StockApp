@@ -33,28 +33,24 @@ import AvatarPreviewModal from '../components/AvatarPreviewModal';
 import { useUser } from '../context/UserContext';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 
-type Business = { id: number; name: string };
-
 export default function AccountScreen() {
   const { user, refreshUser } = useUser();
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [ownedBusinesses, setOwnedBusinesses] = useState<Business[]>([]);
-  const [joinedBusinesses, setJoinedBusinesses] = useState<Business[]>([]);
-  const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [ownedBusinesses, setOwnedBusinesses] = useState([]);
+  const [joinedBusinesses, setJoinedBusinesses] = useState([]);
+  const [previewUri, setPreviewUri] = useState(null);
 
   const router = useRouter();
   const navigation = useNavigation();
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
-    return () => {
+    return () =>
       navigation.getParent()?.setOptions({ tabBarStyle: { display: 'flex' } });
-    };
   }, [navigation]);
 
   const loadProfile = useCallback(() => {
@@ -109,7 +105,6 @@ export default function AccountScreen() {
     });
 
     if (result.canceled || !result.assets?.length) return;
-
     setPreviewUri(result.assets[0].uri);
   };
 
@@ -118,8 +113,7 @@ export default function AccountScreen() {
     try {
       await uploadAvatar(previewUri);
       Toast.show({ type: 'successToast', text1: 'Avatar updated!' });
-      refreshUser();
-      loadProfile();
+      await refreshUser();
     } catch {
       Toast.show({ type: 'errorToast', text1: 'Upload failed.' });
     } finally {
@@ -174,11 +168,7 @@ export default function AccountScreen() {
 
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={24}
-            color="#bd93f9"
-          />
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
         </TouchableOpacity>
         <Text style={styles.header}>Account</Text>
       </View>
@@ -187,9 +177,7 @@ export default function AccountScreen() {
         <View style={styles.identityCard}>
           <View style={styles.identityRow}>
             <View style={styles.identityLeft}>
-              <Text style={styles.userName}>
-                {user?.username || 'No name'}
-              </Text>
+              <Text style={styles.userName}>{user?.username || 'No name'}</Text>
               <Text style={styles.accountType}>StockApp Account</Text>
               <Text style={styles.version}>v{CHANGELOG_VERSION}</Text>
             </View>
@@ -230,6 +218,7 @@ export default function AccountScreen() {
           ) : (
             <Text style={styles.teamMember}>None</Text>
           )}
+
           <Text style={styles.teamLabel}>Joined:</Text>
           {joinedBusinesses.length ? (
             joinedBusinesses.map((biz) => (
@@ -263,9 +252,7 @@ export default function AccountScreen() {
             onDismiss={() => setShowLogoutConfirm(false)}
             style={styles.dialog}
           >
-            <Dialog.Title style={styles.dialogTitle}>
-              Confirm Logout
-            </Dialog.Title>
+            <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
             <Dialog.Content>
               <Text style={styles.dialogText}>
                 Are you sure you want to log out?
