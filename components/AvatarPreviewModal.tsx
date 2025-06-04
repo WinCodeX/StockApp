@@ -1,24 +1,91 @@
-import React from 'react'; import { Modal, View, StyleSheet, Text, TouchableOpacity, Image, Dimensions, } from 'react-native'; import { Button } from 'react-native-paper';
+import React from 'react';
+import { View, Image, Text, StyleSheet } from 'react-native';
+import { Button, Dialog, Portal } from 'react-native-paper';
 
-const { width } = Dimensions.get('window');
+interface Props {
+  visible: boolean;
+  uri: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
 
-export default function AvatarPreviewModal({ visible, imageUri, onCancel, onConfirm, }: { visible: boolean; imageUri: string; onCancel: () => void; onConfirm: () => void; }) { return ( <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}> <View style={styles.overlay}> <View style={styles.modalBox}> <Text style={styles.title}>Preview Avatar</Text>
+export default function AvatarPreviewModal({
+  visible,
+  uri,
+  onCancel,
+  onConfirm,
+}: Props) {
+  return (
+    <Portal>
+      <Dialog visible={visible} onDismiss={onCancel} style={styles.dialog}>
+        <Dialog.Title style={styles.title}>Preview Avatar</Dialog.Title>
+        <Dialog.Content>
+          <Image source={{ uri }} style={styles.avatarPreview} />
+          <Text style={styles.text}>Do you want to use this photo as your avatar?</Text>
+        </Dialog.Content>
+        <Dialog.Actions style={styles.actions}>
+          <Button
+            onPress={onCancel}
+            style={styles.cancelButton}
+            labelStyle={styles.cancelLabel}
+          >
+            Cancel
+          </Button>
+          <Button
+            mode="outlined"
+            onPress={onConfirm}
+            style={styles.confirmButton}
+            labelStyle={styles.confirmLabel}
+          >
+            Confirm
+          </Button>
+        </Dialog.Actions>
+      </Dialog>
+    </Portal>
+  );
+}
 
-<Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
-
-      <View style={styles.actions}>
-        <Button mode="outlined" onPress={onCancel} style={styles.cancelButton}>
-          Cancel
-        </Button>
-        <Button mode="contained" onPress={onConfirm} style={styles.confirmButton}>
-          Upload
-        </Button>
-      </View>
-    </View>
-  </View>
-</Modal>
-
-); }
-
-const styles = StyleSheet.create({ overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)', }, modalBox: { backgroundColor: '#1e1e2e', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, alignItems: 'center', }, title: { color: '#f8f8f2', fontSize: 18, fontWeight: 'bold', marginBottom: 12, }, preview: { width: width * 0.7, height: width * 0.7, borderRadius: width * 0.35, borderWidth: 2, borderColor: '#bd93f9', marginBottom: 16, }, actions: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', }, cancelButton: { flex: 1, marginRight: 10, }, confirmButton: { flex: 1, backgroundColor: '#bd93f9', }, });
-
+const styles = StyleSheet.create({
+  dialog: {
+    backgroundColor: '#282a36',
+    borderRadius: 12,
+  },
+  title: {
+    color: '#f8f8f2',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  avatarPreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  text: {
+    color: '#ccc',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  actions: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+  },
+  cancelButton: {
+    backgroundColor: '#bd93f9',
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  cancelLabel: {
+    color: '#fff',
+  },
+  confirmButton: {
+    borderColor: '#50fa7b',
+    borderWidth: 1,
+    borderRadius: 6,
+  },
+  confirmLabel: {
+    color: '#50fa7b',
+    fontWeight: 'bold',
+  },
+});
