@@ -19,7 +19,7 @@ import ChangelogModal, {
   CHANGELOG_KEY,
   CHANGELOG_VERSION,
 } from '../../components/ChangelogModal';
-import { useUser } from '../../contexts/UserContext'; // <-- Make sure this is correct
+import { useUser } from '../../context/UserContext'; // <-- Make sure this is correct
 
 export default function Dashboard() {
   const router = useRouter();
