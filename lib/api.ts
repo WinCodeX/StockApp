@@ -4,8 +4,8 @@ import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import Toast from 'react-native-toast-message';
 
-const LOCAL_BASE_1 = 'http://192.168.89.106:3000';
-const LOCAL_BASE_2 = 'http://192.168.149.106:3000';
+const LOCAL_BASE_1 = 'http://192.168.100.73:3000';
+const LOCAL_BASE_2 = 'http://192.168.7.106:3000';
 const PROD_BASE = 'https://stockx-3vvh.onrender.com';
 
 let resolvedBaseUrl: string | null = null;
