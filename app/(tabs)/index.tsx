@@ -19,9 +19,11 @@ import ChangelogModal, {
   CHANGELOG_KEY,
   CHANGELOG_VERSION,
 } from '../../components/ChangelogModal';
+import { useUser } from '../../contexts/UserContext'; // <-- Make sure this is correct
 
 export default function Dashboard() {
   const router = useRouter();
+  const { refreshUser } = useUser(); // <-- Get from context
 
   const [stats, setStats] = useState(null);
   const [recentSales, setRecentSales] = useState([]);
@@ -45,6 +47,7 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
+      await refreshUser(); // <-- Ensure user data is fresh
       const productStats = await getProductStats();
       const sales = await getRecentSales();
 
