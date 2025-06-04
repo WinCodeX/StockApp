@@ -1,5 +1,3 @@
-// app/_layout.tsx
-
 import React, { useEffect, useState } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -8,37 +6,23 @@ import Toast from 'react-native-toast-message';
 import { Provider as PaperProvider, MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 import { useColorScheme } from 'react-native';
 import { toastConfig } from '../lib/toastConfig';
+import { UserProvider } from '../contexts/UserContext'; // ✅ Import your context
 
-// Font config that satisfies labelLarge and others
+// Font config
 const fontConfig = {
-  regular: {
-    fontFamily: 'System',
-    fontWeight: 'normal',
-  },
-  medium: {
-    fontFamily: 'System',
-    fontWeight: '500',
-  },
-  bold: {
-    fontFamily: 'System',
-    fontWeight: 'bold',
-  },
+  regular: { fontFamily: 'System', fontWeight: 'normal' },
+  medium: { fontFamily: 'System', fontWeight: '500' },
+  bold: { fontFamily: 'System', fontWeight: 'bold' },
 };
 
 const CustomLightTheme = {
   ...MD3LightTheme,
-  fonts: {
-    ...MD3LightTheme.fonts,
-    ...fontConfig,
-  },
+  fonts: { ...MD3LightTheme.fonts, ...fontConfig },
 };
 
 const CustomDarkTheme = {
   ...MD3DarkTheme,
-  fonts: {
-    ...MD3DarkTheme.fonts,
-    ...fontConfig,
-  },
+  fonts: { ...MD3DarkTheme.fonts, ...fontConfig },
 };
 
 export default function RootLayout() {
@@ -78,7 +62,9 @@ export default function RootLayout() {
   return (
     <>
       <PaperProvider theme={colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
-        <Slot />
+        <UserProvider> {/* ✅ Wrap Slot with UserProvider */}
+          <Slot />
+        </UserProvider>
       </PaperProvider>
       <Toast config={toastConfig} topOffset={50} />
     </>
