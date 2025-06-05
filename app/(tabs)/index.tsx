@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  FlatList, 
+  ActivityIndicator 
 } from 'react-native';
 import { Button, Card } from 'react-native-paper';
 import { useRouter } from 'expo-router';
@@ -15,17 +15,20 @@ import colors from '../../theme/colors';
 import HeaderBar from '../../components/HeaderBar';
 import { getProductStats } from '../../lib/helpers/getProductStats';
 import { getRecentSales } from '../../lib/helpers/getRecentSales';
-import ChangelogModal, {
-  CHANGELOG_KEY,
-  CHANGELOG_VERSION,
+import ChangelogModal, { 
+  CHANGELOG_KEY, 
+  CHANGELOG_VERSION 
 } from '../../components/ChangelogModal';
-import { useUser } from '../../context/UserContext'; // <-- Make sure this is correct
+import { useUser } from '../../context/UserContext';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { refreshUser } = useUser(); // <-- Get from context
+  const { refreshUser } = useUser();
 
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({ 
+    total_products: 0, 
+    low_stock: 0 
+  });
   const [recentSales, setRecentSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showChangelog, setShowChangelog] = useState(false);
@@ -47,7 +50,7 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      await refreshUser(); // <-- Ensure user data is fresh
+      await refreshUser();
       const productStats = await getProductStats();
       const sales = await getRecentSales();
 
@@ -55,8 +58,6 @@ export default function Dashboard() {
       setRecentSales(sales);
     } catch (error) {
       console.error('Failed to load dashboard data', error);
-      setStats({ total_products: 0, low_stock: 0 });
-      setRecentSales([]);
     } finally {
       setLoading(false);
     }
@@ -65,6 +66,7 @@ export default function Dashboard() {
   return (
     <SafeAreaView style={styles.container}>
       <HeaderBar />
+      
       <View style={styles.content}>
         <Text style={styles.title}>Welcome to StockApp</Text>
 
@@ -77,6 +79,7 @@ export default function Dashboard() {
                 <Text style={styles.statLabel}>Total Products</Text>
                 <Text style={styles.statValue}>{stats.total_products}</Text>
               </Card>
+              
               <Card style={styles.statCard}>
                 <Text style={styles.statLabel}>Low Stock</Text>
                 <Text style={styles.statValue}>{stats.low_stock}</Text>
@@ -101,10 +104,17 @@ export default function Dashboard() {
             />
 
             <View style={styles.quickActions}>
-              <Button mode="contained" onPress={() => router.push('/(tabs)/product')}>
+              <Button 
+                mode="contained" 
+                onPress={() => router.push('/(tabs)/product')}
+              >
                 View Products
               </Button>
-              <Button mode="outlined" onPress={() => router.push('/(tabs)/sales')}>
+              
+              <Button 
+                mode="outlined" 
+                onPress={() => router.push('/(tabs)/sales')}
+              >
                 Record Sale
               </Button>
             </View>
@@ -112,7 +122,10 @@ export default function Dashboard() {
         )}
       </View>
 
-      <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
+      <ChangelogModal 
+        visible={showChangelog} 
+        onClose={dismissChangelog} 
+      />
     </SafeAreaView>
   );
 }
