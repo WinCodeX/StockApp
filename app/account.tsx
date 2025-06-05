@@ -1,107 +1,90 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useState,
-} from 'react';
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ScrollView,
-} from 'react-native';
 import { Avatar, Button, Dialog, Portal } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { useUser } from '../context/UserContext';
 import { getBusinesses } from '../lib/helpers/business';
+import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 import LoaderOverlay from '../components/LoaderOverlay';
-import ChangelogModal, {
-  CHANGELOG_KEY,
-  CHANGELOG_VERSION,
-} from '../components/ChangelogModal';
+import ChangelogModal, { CHANGELOG_KEY, CHANGELOG_VERSION } from '../components/ChangelogModal';
 import BusinessModal from '../components/BusinessModal';
 import JoinBusinessModal from '../components/JoinBusinessModal';
 import AvatarPreviewModal from '../components/AvatarPreviewModal';
-import { useUser } from '../context/UserContext';
-import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 
 export default function AccountScreen() {
-  const { user, refreshUser } = useUser();
+  const { user, refreshUser, loading: userLoading, error: userError } = useUser();
   const [loading, setLoading] = useState(true);
+  const [ownedBusinesses, setOwnedBusinesses] = useState([]);
+  const [joinedBusinesses, setJoinedBusinesses] = useState([]);
+  const [previewUri, setPreviewUri] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [ownedBusinesses, setOwnedBusinesses] = useState([]);
-  const [joinedBusinesses, setJoinedBusinesses] = useState([]);
-  const [previewUri, setPreviewUri] = useState(null);
 
-  const router = useRouter();
   const navigation = useNavigation();
+  const router = useRouter();
 
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
-    return () =>
-      navigation.getParent()?.setOptions({ tabBarStyle: { display: 'flex' } });
+    return () => navigation.getParent()?.setOptions({ tabBarStyle: { display: 'flex' } });
   }, [navigation]);
 
-  const loadProfile = useCallback(() => {
-    (async () => {
-      try {
-        const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
-        if (!seen) setShowChangelog(true);
+  const loadBusinesses = async () => {
+    try {
+      const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
+      if (!seen) setShowChangelog(true);
 
-        const businesses = await getBusinesses();
-        setOwnedBusinesses(businesses?.owned || []);
-        setJoinedBusinesses(businesses?.joined || []);
-      } catch (error) {
-        Toast.show({ type: 'errorToast', text1: 'Failed to load profile.' });
-        setOwnedBusinesses([]);
-        setJoinedBusinesses([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+      const data = await getBusinesses();
+      setOwnedBusinesses(data?.owned || []);
+      setJoinedBusinesses(data?.joined || []);
+    } catch (error) {
+      Toast.show({ type: 'errorToast', text1: 'Failed to load businesses.' });
+      setOwnedBusinesses([]);
+      setJoinedBusinesses([]);
+    }
+  };
 
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+  const reloadFullProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      await refreshUser();
+      await loadBusinesses();
+    } finally {
+      setLoading(false);
+    }
+  }, [refreshUser]);
 
   useFocusEffect(
     useCallback(() => {
-      loadProfile();
-    }, [loadProfile])
+      reloadFullProfile();
+    }, [reloadFullProfile])
   );
 
-  useEffect(() => {
-    const fallback = setTimeout(() => {
-      if (loading) setLoading(false);
-    }, 8000);
-    return () => clearTimeout(fallback);
-  }, [loading]);
-
   const pickAndPreviewAvatar = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      return Toast.show({
-        type: 'warningToast',
-        text1: 'Photo access denied.',
-      });
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      return Toast.show({ type: 'warningToast', text1: 'Photo access denied.' });
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
       allowsEditing: true,
+      quality: 0.7,
     });
 
     if (result.canceled || !result.assets?.length) return;
@@ -113,7 +96,7 @@ export default function AccountScreen() {
     try {
       await uploadAvatar(previewUri);
       Toast.show({ type: 'successToast', text1: 'Avatar updated!' });
-      await refreshUser();
+      await reloadFullProfile();
     } catch {
       Toast.show({ type: 'errorToast', text1: 'Upload failed.' });
     } finally {
@@ -123,8 +106,8 @@ export default function AccountScreen() {
 
   const confirmLogout = async () => {
     await SecureStore.deleteItemAsync('auth_token');
-    setShowLogoutConfirm(false);
     Toast.show({ type: 'warningToast', text1: 'Logged out successfully' });
+    setShowLogoutConfirm(false);
     router.replace('/login');
   };
 
@@ -133,36 +116,39 @@ export default function AccountScreen() {
     setShowChangelog(false);
   };
 
+  if (userLoading || loading) return <LoaderOverlay visible />;
+  if (userError) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.error}>Failed to load account. Check your connection.</Text>
+        <Button onPress={reloadFullProfile}>Retry</Button>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <LoaderOverlay visible={loading} />
-
-      {showChangelog && (
-        <ChangelogModal visible={showChangelog} onClose={dismissChangelog} />
-      )}
-
-      {showBusinessModal && (
-        <BusinessModal
-          visible={showBusinessModal}
-          onClose={() => setShowBusinessModal(false)}
-          onCreate={loadProfile}
-        />
-      )}
-
-      {showJoinModal && (
-        <JoinBusinessModal
-          visible={showJoinModal}
-          onClose={() => setShowJoinModal(false)}
-          onJoin={loadProfile}
-        />
-      )}
-
+      {showChangelog && <ChangelogModal visible onClose={dismissChangelog} />}
       {previewUri && (
         <AvatarPreviewModal
-          visible={!!previewUri}
+          visible
           uri={previewUri}
           onCancel={() => setPreviewUri(null)}
           onConfirm={confirmUploadAvatar}
+        />
+      )}
+      {showBusinessModal && (
+        <BusinessModal
+          visible
+          onClose={() => setShowBusinessModal(false)}
+          onCreate={reloadFullProfile}
+        />
+      )}
+      {showJoinModal && (
+        <JoinBusinessModal
+          visible
+          onClose={() => setShowJoinModal(false)}
+          onJoin={reloadFullProfile}
         />
       )}
 
@@ -176,7 +162,7 @@ export default function AccountScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={styles.identityCard}>
           <View style={styles.identityRow}>
-            <View style={styles.identityLeft}>
+            <View>
               <Text style={styles.userName}>{user?.username || 'No name'}</Text>
               <Text style={styles.accountType}>StockApp Account</Text>
               <Text style={styles.version}>v{CHANGELOG_VERSION}</Text>
@@ -196,35 +182,26 @@ export default function AccountScreen() {
 
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Business</Text>
-          <View style={{ marginTop: 12, flexDirection: 'row', gap: 10 }}>
-            <Button mode="outlined" onPress={() => setShowBusinessModal(true)}>
-              Create Business
-            </Button>
-            <Button mode="outlined" onPress={() => setShowJoinModal(true)}>
-              Join Business
-            </Button>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+            <Button mode="outlined" onPress={() => setShowBusinessModal(true)}>Create</Button>
+            <Button mode="outlined" onPress={() => setShowJoinModal(true)}>Join</Button>
           </View>
         </View>
 
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Your Businesses</Text>
           <Text style={styles.teamLabel}>Owned:</Text>
-          {ownedBusinesses.length ? (
+          {ownedBusinesses.length > 0 ? (
             ownedBusinesses.map((biz) => (
-              <Text key={`owned-${biz.id}`} style={styles.teamMember}>
-                • {biz.name}
-              </Text>
+              <Text key={biz.id} style={styles.teamMember}>• {biz.name}</Text>
             ))
           ) : (
             <Text style={styles.teamMember}>None</Text>
           )}
-
           <Text style={styles.teamLabel}>Joined:</Text>
-          {joinedBusinesses.length ? (
+          {joinedBusinesses.length > 0 ? (
             joinedBusinesses.map((biz) => (
-              <Text key={`joined-${biz.id}`} style={styles.teamMember}>
-                • {biz.name}
-              </Text>
+              <Text key={biz.id} style={styles.teamMember}>• {biz.name}</Text>
             ))
           ) : (
             <Text style={styles.teamMember}>None</Text>
@@ -236,44 +213,20 @@ export default function AccountScreen() {
             style={styles.logoutButton}
             onPress={() => setShowLogoutConfirm(true)}
           >
-            <MaterialCommunityIcons
-              name="logout"
-              size={22}
-              color="#ff6b6b"
-              style={styles.logoutIcon}
-            />
+            <MaterialCommunityIcons name="logout" size={22} color="#ff6b6b" />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
 
         <Portal>
-          <Dialog
-            visible={showLogoutConfirm}
-            onDismiss={() => setShowLogoutConfirm(false)}
-            style={styles.dialog}
-          >
+          <Dialog visible={showLogoutConfirm} onDismiss={() => setShowLogoutConfirm(false)} style={styles.dialog}>
             <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
             <Dialog.Content>
-              <Text style={styles.dialogText}>
-                Are you sure you want to log out?
-              </Text>
+              <Text style={styles.dialogText}>Are you sure you want to log out?</Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
-              <Button
-                onPress={() => setShowLogoutConfirm(false)}
-                style={styles.dialogCancel}
-                labelStyle={styles.cancelLabel}
-              >
-                No
-              </Button>
-              <Button
-                mode="outlined"
-                onPress={confirmLogout}
-                style={styles.dialogConfirm}
-                labelStyle={styles.confirmLabel}
-              >
-                Yes
-              </Button>
+              <Button onPress={() => setShowLogoutConfirm(false)} style={styles.dialogCancel}>No</Button>
+              <Button mode="outlined" onPress={confirmLogout} style={styles.dialogConfirm}>Yes</Button>
             </Dialog.Actions>
           </Dialog>
         </Portal>
@@ -290,9 +243,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 8,
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    padding: 16,
     gap: 10,
   },
   header: {
@@ -310,9 +261,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  identityLeft: {
-    flexDirection: 'column',
   },
   userName: {
     color: '#fff',
@@ -345,9 +293,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  logoutIcon: {
-    marginRight: 12,
+    gap: 12,
   },
   logoutText: {
     color: '#ff6b6b',
@@ -375,16 +321,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 8,
   },
-  cancelLabel: {
-    color: '#fff',
-  },
   dialogConfirm: {
     borderColor: '#ff5555',
     borderWidth: 1,
     borderRadius: 6,
   },
-  confirmLabel: {
+  error: {
     color: '#ff5555',
-    fontWeight: 'bold',
+    padding: 20,
+    textAlign: 'center',
   },
 });
