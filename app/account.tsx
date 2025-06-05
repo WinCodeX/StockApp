@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -54,14 +54,14 @@ export default function AccountScreen() {
       const data = await getBusinesses();
       setOwnedBusinesses(data?.owned || []);
       setJoinedBusinesses(data?.joined || []);
-    } catch (error) {
+    } catch {
       Toast.show({ type: 'errorToast', text1: 'Failed to load businesses.' });
       setOwnedBusinesses([]);
       setJoinedBusinesses([]);
     }
   };
 
-  const reloadFullProfile = useCallback(async () => {
+  const reloadFullProfile = async () => {
     setRefreshing(true);
     setLoading(true);
     try {
@@ -71,11 +71,18 @@ export default function AccountScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [refreshUser]);
+  };
 
   useEffect(() => {
     reloadFullProfile();
-  }, [reloadFullProfile]);
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshUser();
+    await loadBusinesses();
+    setRefreshing(false);
+  };
 
   const pickAndPreviewAvatar = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -164,11 +171,7 @@ export default function AccountScreen() {
       <ScrollView
         contentContainerStyle={{ paddingBottom: 32 }}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={reloadFullProfile}
-            colors={['#bd93f9']}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#bd93f9']} />
         }
       >
         <View style={styles.identityCard}>
