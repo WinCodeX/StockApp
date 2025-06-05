@@ -108,7 +108,7 @@ export default function BottomSheetModal({
                 }
               />
 
-              {stockHistory?.qr_url && (
+              {stockHistory?.qr_code_url && (
                 <View style={styles.qrSection}>
                   <Text style={styles.qrLabel}>QR Code</Text>
                   <Image
