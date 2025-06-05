@@ -43,7 +43,7 @@ export default function BottomSheetModal({
           const data = await getStockHistory(product.id);
           setStockHistory(data);
         } catch (err) {
-          console.error('Failed to fetch stock history:', err);
+          console.error('❌ Failed to fetch stock history:', err);
         }
       })();
     }
@@ -108,15 +108,18 @@ export default function BottomSheetModal({
                 }
               />
 
-              {product?.attributes?.qr_code_url && (
+              {product?.attributes?.qr_code_url ? (
                 <View style={styles.qrSection}>
                   <Text style={styles.qrLabel}>QR Code</Text>
                   <Image
+                    key={product.id}
                     source={{ uri: product.attributes.qr_code_url }}
                     style={styles.qrImage}
                     onError={() => console.warn('⚠️ Failed to load QR code')}
                   />
                 </View>
+              ) : (
+                <Text style={styles.qrLabel}>QR Code not available.</Text>
               )}
             </>
           )}
@@ -190,10 +193,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   qrImage: {
-    width: 160,
-    height: 160,
+    width: 180,
+    height: 180,
     resizeMode: 'contain',
     borderRadius: 12,
-    backgroundColor: '#1e1e2e',
+    backgroundColor: '#fff', // Bright background for contrast
   },
 });
