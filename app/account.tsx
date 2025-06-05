@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  Modal,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
+  RefreshControl, 
+  Modal 
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
@@ -23,23 +23,22 @@ import { useUser } from '../context/UserContext';
 import { getBusinesses, createInvite } from '../lib/helpers/business';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 import LoaderOverlay from '../components/LoaderOverlay';
-import ChangelogModal, {
-  CHANGELOG_KEY,
-  CHANGELOG_VERSION,
+import ChangelogModal, { 
+  CHANGELOG_KEY, 
+  CHANGELOG_VERSION 
 } from '../components/ChangelogModal';
 import BusinessModal from '../components/BusinessModal';
 import JoinBusinessModal from '../components/JoinBusinessModal';
 import AvatarPreviewModal from '../components/AvatarPreviewModal';
 
 export default function AccountScreen() {
-  const {
-    user,
-    refreshUser,
-    loading: userLoading,
-    error: userError
+  const { 
+    user, 
+    refreshUser, 
+    loading: userLoading, 
+    error: userError 
   } = useUser();
 
-  // State management
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [ownedBusinesses, setOwnedBusinesses] = useState([]);
@@ -55,7 +54,6 @@ export default function AccountScreen() {
   const navigation = useNavigation();
   const router = useRouter();
 
-  // Hide tab bar when this screen is active
   useLayoutEffect(() => {
     navigation.getParent()?.setOptions({
       tabBarStyle: { display: 'none' }
@@ -66,7 +64,6 @@ export default function AccountScreen() {
     });
   }, [navigation]);
 
-  // Load businesses data
   const loadBusinesses = async () => {
     try {
       const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
@@ -85,11 +82,9 @@ export default function AccountScreen() {
     }
   };
 
-  // Reload full profile data
   const reloadFullProfile = async () => {
     setRefreshing(true);
     setLoading(true);
-    
     try {
       await refreshUser();
       await loadBusinesses();
@@ -99,12 +94,10 @@ export default function AccountScreen() {
     }
   };
 
-  // Initial data load
   useEffect(() => {
     reloadFullProfile();
   }, []);
 
-  // Pull to refresh handler
   const onRefresh = async () => {
     setRefreshing(true);
     await refreshUser();
@@ -112,29 +105,26 @@ export default function AccountScreen() {
     setRefreshing(false);
   };
 
-  // Avatar selection and preview
   const pickAndPreviewAvatar = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
     if (!permission.granted) {
       return Toast.show({
         type: 'warningToast',
         text1: 'Photo access denied.'
       });
     }
-
+    
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.7,
     });
-
+    
     if (result.canceled || !result.assets?.length) return;
     
     setPreviewUri(result.assets[0].uri);
   };
 
-  // Confirm avatar upload
   const confirmUploadAvatar = async () => {
     if (!previewUri) return;
     
@@ -155,7 +145,6 @@ export default function AccountScreen() {
     }
   };
 
-  // Logout confirmation
   const confirmLogout = async () => {
     await SecureStore.deleteItemAsync('auth_token');
     Toast.show({
@@ -166,16 +155,13 @@ export default function AccountScreen() {
     router.replace('/login');
   };
 
-  // Dismiss changelog modal
   const dismissChangelog = async () => {
     await AsyncStorage.setItem(CHANGELOG_KEY, 'true');
     setShowChangelog(false);
   };
 
-  // Loading state
   if (userLoading || loading) return <LoaderOverlay visible />;
 
-  // Error state
   if (userError) {
     return (
       <SafeAreaView style={styles.container}>
@@ -189,15 +175,13 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Changelog Modal */}
       {showChangelog && (
-        <ChangelogModal
-          visible
-          onClose={dismissChangelog}
+        <ChangelogModal 
+          visible 
+          onClose={dismissChangelog} 
         />
       )}
-
-      {/* Avatar Preview Modal */}
+      
       {previewUri && (
         <AvatarPreviewModal
           visible
@@ -206,8 +190,7 @@ export default function AccountScreen() {
           onConfirm={confirmUploadAvatar}
         />
       )}
-
-      {/* Business Creation Modal */}
+      
       {showBusinessModal && (
         <BusinessModal
           visible
@@ -215,8 +198,7 @@ export default function AccountScreen() {
           onCreate={reloadFullProfile}
         />
       )}
-
-      {/* Join Business Modal */}
+      
       {showJoinModal && (
         <JoinBusinessModal
           visible
@@ -225,53 +207,54 @@ export default function AccountScreen() {
         />
       )}
 
-      {/* Invite Link Modal */}
       {selectedBusiness && (
-        <Modal visible transparent animationType="slide">
-          <View style={styles.inviteModal}>
-            <Text style={styles.modalText}>
-              Generate invite link for "{selectedBusiness.name}"?
-            </Text>
-            
-            {!inviteLink ? (
-              <Button
-                mode="contained"
-                onPress={async () => {
-                  try {
-                    const res = await createInvite(selectedBusiness.id);
-                    setInviteLink(res?.code || 'No code');
-                  } catch {}
-                }}
-              >
-                Generate Link
-              </Button>
-            ) : (
-              <>
-                <Text selectable style={styles.code}>
-                  {inviteLink}
-                </Text>
+        <Modal visible transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.inviteModal}>
+              <Text style={styles.modalText}>
+                Generate invite link for "{selectedBusiness.name}"?
+              </Text>
+              
+              {!inviteLink ? (
                 <Button
-                  onPress={() => {
-                    Clipboard.setStringAsync(inviteLink);
-                    Toast.show({
-                      type: 'successToast',
-                      text1: 'Copied to clipboard!'
-                    });
+                  mode="contained"
+                  onPress={async () => {
+                    try {
+                      const res = await createInvite(selectedBusiness.id);
+                      setInviteLink(res?.code || 'No code');
+                    } catch {}
                   }}
                 >
-                  Copy
+                  Generate Link
                 </Button>
-              </>
-            )}
-            
-            <Button
-              onPress={() => {
-                setSelectedBusiness(null);
-                setInviteLink(null);
-              }}
-            >
-              Close
-            </Button>
+              ) : (
+                <>
+                  <Text selectable style={styles.code}>
+                    {inviteLink}
+                  </Text>
+                  <Button
+                    onPress={() => {
+                      Clipboard.setStringAsync(inviteLink);
+                      Toast.show({
+                        type: 'successToast',
+                        text1: 'Copied to clipboard!'
+                      });
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </>
+              )}
+              
+              <Button 
+                onPress={() => {
+                  setSelectedBusiness(null);
+                  setInviteLink(null);
+                }}
+              >
+                Close
+              </Button>
+            </View>
           </View>
         </Modal>
       )}
@@ -286,7 +269,6 @@ export default function AccountScreen() {
           />
         }
       >
-        {/* Header */}
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => router.back()}>
             <MaterialCommunityIcons
@@ -298,7 +280,6 @@ export default function AccountScreen() {
           <Text style={styles.header}>Account</Text>
         </View>
 
-        {/* User Info Card */}
         <View style={styles.identityCard}>
           <View style={styles.identityRow}>
             <View>
@@ -308,6 +289,7 @@ export default function AccountScreen() {
               <Text style={styles.accountType}>StockApp Account</Text>
               <Text style={styles.version}>v{CHANGELOG_VERSION}</Text>
             </View>
+            
             <TouchableOpacity onPress={pickAndPreviewAvatar}>
               <Avatar.Image
                 size={60}
@@ -321,7 +303,6 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* Business Actions Card */}
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Business</Text>
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
@@ -340,10 +321,9 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* Business Lists Card */}
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Your Businesses</Text>
-
+          
           <Text style={styles.teamLabel}>Owned:</Text>
           {ownedBusinesses.length > 0 ? (
             ownedBusinesses.map((biz) => (
@@ -370,7 +350,6 @@ export default function AccountScreen() {
           )}
         </View>
 
-        {/* Logout Card */}
         <View style={styles.logoutCard}>
           <TouchableOpacity
             style={styles.logoutButton}
@@ -385,7 +364,6 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Logout Confirmation Dialog */}
         <Portal>
           <Dialog
             visible={showLogoutConfirm}
@@ -519,6 +497,12 @@ const styles = StyleSheet.create({
     color: '#ff5555',
     padding: 20,
     textAlign: 'center'
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   inviteModal: {
     backgroundColor: '#282a36',
