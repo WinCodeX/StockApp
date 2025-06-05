@@ -9,9 +9,11 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import colors from '../theme/colors';
 import { getStockHistory } from '../lib/helpers/stockHistory';
 
@@ -32,7 +34,7 @@ export default function BottomSheetModal({
   setQuantity: (value: string) => void;
   onSubmit: () => void;
 }) {
-  const [stockHistory, setStockHistory] = useState([]);
+  const [stockHistory, setStockHistory] = useState<any>(null);
 
   useEffect(() => {
     if (visible && type === 'view' && product) {
@@ -46,6 +48,16 @@ export default function BottomSheetModal({
       })();
     }
   }, [visible, type, product]);
+
+  const renderHistoryItem = ({ item }) => (
+    <View style={styles.historyRow}>
+      <Text style={styles.historyText}>{item.event}</Text>
+      <Text style={styles.historyTextSmall}>By: {item.actor}</Text>
+      <Text style={styles.historyTextSmall}>
+        {new Date(item.timestamp).toLocaleString()}
+      </Text>
+    </View>
+  );
 
   return (
     <Modal
@@ -86,17 +98,26 @@ export default function BottomSheetModal({
               </Button>
             </>
           ) : (
-            <FlatList
-              data={stockHistory}
-              keyExtractor={(item) => String(item.id)}
-              renderItem={({ item }) => (
-                <View style={styles.historyRow}>
-                  <Text style={styles.historyText}>
-                    Qty: {item.quantity} | Date: {item.created_at || item.date}
-                  </Text>
+            <>
+              <FlatList
+                data={stockHistory?.history || []}
+                keyExtractor={(_, index) => index.toString()}
+                renderItem={renderHistoryItem}
+                ListEmptyComponent={
+                  <Text style={styles.historyText}>No history yet.</Text>
+                }
+              />
+
+              {stockHistory?.qr_url && (
+                <View style={styles.qrSection}>
+                  <Text style={styles.qrLabel}>QR Code</Text>
+                  <Image
+                    source={{ uri: stockHistory.qr_url }}
+                    style={styles.qrImage}
+                  />
                 </View>
               )}
-            />
+            </>
           )}
         </View>
       </KeyboardAvoidingView>
@@ -115,7 +136,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '70%',
+    maxHeight: '85%',
   },
   dragHandleContainer: {
     alignItems: 'center',
@@ -152,5 +173,25 @@ const styles = StyleSheet.create({
   },
   historyText: {
     color: '#ccc',
+    fontWeight: '500',
+  },
+  historyTextSmall: {
+    color: '#888',
+    fontSize: 12,
+  },
+  qrSection: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  qrLabel: {
+    color: '#ccc',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  qrImage: {
+    width: 150,
+    height: 150,
+    resizeMode: 'contain',
+    borderRadius: 12,
   },
 });
