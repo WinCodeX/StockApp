@@ -189,14 +189,15 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Modals */}
+      {/* Changelog Modal */}
       {showChangelog && (
         <ChangelogModal
           visible
           onClose={dismissChangelog}
         />
       )}
-      
+
+      {/* Avatar Preview Modal */}
       {previewUri && (
         <AvatarPreviewModal
           visible
@@ -205,7 +206,8 @@ export default function AccountScreen() {
           onConfirm={confirmUploadAvatar}
         />
       )}
-      
+
+      {/* Business Creation Modal */}
       {showBusinessModal && (
         <BusinessModal
           visible
@@ -213,13 +215,65 @@ export default function AccountScreen() {
           onCreate={reloadFullProfile}
         />
       )}
-      
+
+      {/* Join Business Modal */}
       {showJoinModal && (
         <JoinBusinessModal
           visible
           onClose={() => setShowJoinModal(false)}
           onJoin={reloadFullProfile}
         />
+      )}
+
+      {/* Invite Link Modal */}
+      {selectedBusiness && (
+        <Modal visible transparent animationType="slide">
+          <View style={styles.inviteModal}>
+            <Text style={styles.modalText}>
+              Generate invite link for "{selectedBusiness.name}"?
+            </Text>
+            
+            {!inviteLink ? (
+              <Button
+                mode="contained"
+                onPress={async () => {
+                  try {
+                    const res = await createInvite(selectedBusiness.id);
+                    setInviteLink(res?.code || 'No code');
+                  } catch {}
+                }}
+              >
+                Generate Link
+              </Button>
+            ) : (
+              <>
+                <Text selectable style={styles.code}>
+                  {inviteLink}
+                </Text>
+                <Button
+                  onPress={() => {
+                    Clipboard.setStringAsync(inviteLink);
+                    Toast.show({
+                      type: 'successToast',
+                      text1: 'Copied to clipboard!'
+                    });
+                  }}
+                >
+                  Copy
+                </Button>
+              </>
+            )}
+            
+            <Button
+              onPress={() => {
+                setSelectedBusiness(null);
+                setInviteLink(null);
+              }}
+            >
+              Close
+            </Button>
+          </View>
+        </Modal>
       )}
 
       <ScrollView
@@ -244,7 +298,7 @@ export default function AccountScreen() {
           <Text style={styles.header}>Account</Text>
         </View>
 
-        {/* User Info */}
+        {/* User Info Card */}
         <View style={styles.identityCard}>
           <View style={styles.identityRow}>
             <View>
@@ -267,7 +321,7 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* Business Actions */}
+        {/* Business Actions Card */}
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Business</Text>
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
@@ -286,34 +340,37 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* Business Lists */}
+        {/* Business Lists Card */}
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Your Businesses</Text>
-          
+
           <Text style={styles.teamLabel}>Owned:</Text>
           {ownedBusinesses.length > 0 ? (
             ownedBusinesses.map((biz) => (
-              <Text key={biz.id} style={styles.teamMember}>
-                • {biz.name}
-              </Text>
+              <TouchableOpacity
+                key={biz.id}
+                onPress={() => setSelectedBusiness(biz)}
+              >
+                <Text style={styles.businessItem}>• {biz.name}</Text>
+              </TouchableOpacity>
             ))
           ) : (
-            <Text style={styles.teamMember}>None</Text>
+            <Text style={styles.businessItem}>None</Text>
           )}
 
           <Text style={styles.teamLabel}>Joined:</Text>
           {joinedBusinesses.length > 0 ? (
             joinedBusinesses.map((biz) => (
-              <Text key={biz.id} style={styles.teamMember}>
+              <Text key={biz.id} style={styles.businessItem}>
                 • {biz.name}
               </Text>
             ))
           ) : (
-            <Text style={styles.teamMember}>None</Text>
+            <Text style={styles.businessItem}>None</Text>
           )}
         </View>
 
-        {/* Logout */}
+        {/* Logout Card */}
         <View style={styles.logoutCard}>
           <TouchableOpacity
             style={styles.logoutButton}
@@ -328,6 +385,7 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Logout Confirmation Dialog */}
         <Portal>
           <Dialog
             visible={showLogoutConfirm}
@@ -407,11 +465,13 @@ const styles = StyleSheet.create({
   },
   teamLabel: {
     color: '#ccc',
-    marginTop: 8
+    marginTop: 8,
+    fontWeight: '600'
   },
-  teamMember: {
-    color: '#aaa',
-    marginTop: 4
+  businessItem: {
+    color: '#fff',
+    marginTop: 4,
+    fontSize: 15
   },
   logoutCard: {
     backgroundColor: '#282a36',
