@@ -1,35 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import colors from '../theme/colors';
-import { getUser } from '../lib/helpers/getUser';
-import { BASE_URL } from '../lib/api'; // ✅ Import centralized base URL
+import { useUser } from '../context/UserContext';
 
 export default function HeaderBar() {
-  const [avatar, setAvatar] = useState<string | null>(null);
   const router = useRouter();
-
-  useEffect(() => {
-    const loadAvatar = async () => {
-      try {
-        const user = await getUser();
-        const avatarPath = user.avatar_url;
-
-        // ✅ Normalize URL: avoid double BASE_URL if already absolute
-        const normalized = avatarPath?.startsWith('http')
-          ? avatarPath
-          : `${BASE_URL}${avatarPath}`;
-
-        if (avatarPath) {
-          setAvatar(normalized);
-        }
-      } catch (error) {
-        console.error('Avatar fetch failed', error);
-      }
-    };
-
-    loadAvatar();
-  }, []);
+  const { user } = useUser();
 
   return (
     <View style={styles.container}>
@@ -37,13 +14,12 @@ export default function HeaderBar() {
       <TouchableOpacity onPress={() => router.push('/account')}>
         <Image
           source={
-            avatar
-              ? { uri: avatar }
+            user?.avatar_url
+              ? { uri: user.avatar_url }
               : require('../assets/images/avatar_placeholder.png')
           }
           style={styles.avatar}
           resizeMode="cover"
-          onError={() => setAvatar(null)}
         />
       </TouchableOpacity>
     </View>
