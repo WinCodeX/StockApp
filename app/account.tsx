@@ -5,8 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -28,6 +29,7 @@ import AvatarPreviewModal from '../components/AvatarPreviewModal';
 export default function AccountScreen() {
   const { user, refreshUser, loading: userLoading, error: userError } = useUser();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [ownedBusinesses, setOwnedBusinesses] = useState([]);
   const [joinedBusinesses, setJoinedBusinesses] = useState([]);
   const [previewUri, setPreviewUri] = useState(null);
@@ -60,20 +62,20 @@ export default function AccountScreen() {
   };
 
   const reloadFullProfile = useCallback(async () => {
+    setRefreshing(true);
     setLoading(true);
     try {
       await refreshUser();
       await loadBusinesses();
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [refreshUser]);
 
-  useFocusEffect(
-    useCallback(() => {
-      reloadFullProfile();
-    }, [reloadFullProfile])
-  );
+  useEffect(() => {
+    reloadFullProfile();
+  }, [reloadFullProfile]);
 
   const pickAndPreviewAvatar = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -159,7 +161,16 @@ export default function AccountScreen() {
         <Text style={styles.header}>Account</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={reloadFullProfile}
+            colors={['#bd93f9']}
+          />
+        }
+      >
         <View style={styles.identityCard}>
           <View style={styles.identityRow}>
             <View>
@@ -236,10 +247,7 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1e1e2e',
-  },
+  container: { flex: 1, backgroundColor: '#1e1e2e' },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -262,28 +270,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  userName: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  accountType: {
-    color: '#888',
-    fontSize: 14,
-    marginTop: 4,
-  },
-  version: {
-    color: '#999',
-    marginTop: 4,
-  },
-  teamLabel: {
-    color: '#ccc',
-    marginTop: 8,
-  },
-  teamMember: {
-    color: '#aaa',
-    marginTop: 4,
-  },
+  userName: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  accountType: { color: '#888', fontSize: 14, marginTop: 4 },
+  version: { color: '#999', marginTop: 4 },
+  teamLabel: { color: '#ccc', marginTop: 8 },
+  teamMember: { color: '#aaa', marginTop: 4 },
   logoutCard: {
     backgroundColor: '#282a36',
     margin: 16,
