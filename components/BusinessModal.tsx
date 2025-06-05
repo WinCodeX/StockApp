@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 import colors from '../theme/colors';
+import { createBusiness } from '../lib/helpers/business'; // ✅ Import helper
 
 type Props = {
   visible: boolean;
@@ -21,13 +23,24 @@ type Props = {
 
 export default function BusinessModal({ visible, onClose, onCreate }: Props) {
   const [name, setName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const trimmed = name.trim();
-    if (!trimmed) return;
-    onCreate(trimmed);
-    setName('');
-    onClose();
+    if (!trimmed || submitting) return;
+
+    setSubmitting(true);
+    try {
+      await createBusiness(trimmed);        // 🔥 Call API
+      Toast.show({ type: 'successToast', text1: 'Business created!' });
+      onCreate(trimmed);                    // ✅ Refresh parent state
+      setName('');
+      onClose();                            // ✅ Close modal
+    } catch {
+      // Toast is shown in helper already
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -49,9 +62,16 @@ export default function BusinessModal({ visible, onClose, onCreate }: Props) {
             value={name}
             onChangeText={setName}
             style={styles.input}
+            editable={!submitting}
           />
 
-          <Button mode="contained" onPress={handleCreate} style={styles.button}>
+          <Button
+            mode="contained"
+            onPress={handleCreate}
+            style={styles.button}
+            loading={submitting}
+            disabled={submitting}
+          >
             Create
           </Button>
         </View>
@@ -64,7 +84,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.1)', // Light overlay (adjust if needed)
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   sheet: {
     backgroundColor: colors.background,
