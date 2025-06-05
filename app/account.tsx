@@ -250,7 +250,7 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e1e2e' },
+  container: { flex: 1, backgroundColor: '#0e0e11' },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
