@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 import colors from '../theme/colors';
+import { joinBusiness } from '../lib/helpers/business'; // ✅ Import helper
 
 type Props = {
   visible: boolean;
@@ -21,13 +23,23 @@ type Props = {
 
 export default function JoinBusinessModal({ visible, onClose, onJoin }: Props) {
   const [code, setCode] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     const trimmed = code.trim();
-    if (trimmed.length === 6) {
-      onJoin(trimmed);
+    if (trimmed.length !== 6 || submitting) return;
+
+    setSubmitting(true);
+    try {
+      await joinBusiness(trimmed); // ✅ Call backend
+      Toast.show({ type: 'successToast', text1: 'Successfully joined business!' });
+      onJoin(trimmed);             // ✅ Trigger parent refresh
       setCode('');
       onClose();
+    } catch {
+      // Toast handled inside the helper already
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -52,9 +64,16 @@ export default function JoinBusinessModal({ visible, onClose, onJoin }: Props) {
             keyboardType="number-pad"
             maxLength={6}
             style={styles.input}
+            editable={!submitting}
           />
 
-          <Button mode="contained" onPress={handleJoin} style={styles.button}>
+          <Button
+            mode="contained"
+            onPress={handleJoin}
+            style={styles.button}
+            loading={submitting}
+            disabled={submitting}
+          >
             Join
           </Button>
         </View>
