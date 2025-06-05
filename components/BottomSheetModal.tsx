@@ -108,12 +108,13 @@ export default function BottomSheetModal({
                 }
               />
 
-              {stockHistory?.qr_code_url && (
+              {product?.attributes?.qr_code_url && (
                 <View style={styles.qrSection}>
                   <Text style={styles.qrLabel}>QR Code</Text>
                   <Image
-                    source={{ uri: stockHistory.qr_url }}
+                    source={{ uri: product.attributes.qr_code_url }}
                     style={styles.qrImage}
+                    onError={() => console.warn('⚠️ Failed to load QR code')}
                   />
                 </View>
               )}
@@ -189,9 +190,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   qrImage: {
-    width: 150,
-    height: 150,
+    width: 160,
+    height: 160,
     resizeMode: 'contain',
     borderRadius: 12,
+    backgroundColor: '#1e1e2e',
   },
 });
