@@ -161,12 +161,12 @@ export default function AccountScreen() {
   };
 
   if (userLoading || loading) {
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0e0e11' }}>
-      <LoaderOverlay visible />
-    </SafeAreaView>
-  );
-}
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0e0e11' }}>
+        <LoaderOverlay visible />
+      </SafeAreaView>
+    );
+  }
 
   if (userError) {
     return (
@@ -181,11 +181,11 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Loader overlay appears on top without replacing background */}
+      <LoaderOverlay visible={userLoading || loading} />
+
       {showChangelog && (
-        <ChangelogModal 
-          visible 
-          onClose={dismissChangelog} 
-        />
+        <ChangelogModal visible onClose={dismissChangelog} />
       )}
       
       {previewUri && (
@@ -252,7 +252,7 @@ export default function AccountScreen() {
                 </>
               )}
               
-              <Button 
+              <Button
                 onPress={() => {
                   setSelectedBusiness(null);
                   setInviteLink(null);
@@ -312,31 +312,18 @@ export default function AccountScreen() {
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Business</Text>
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-            <Button
-              mode="outlined"
-              onPress={() => setShowBusinessModal(true)}
-            >
-              Create
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={() => setShowJoinModal(true)}
-            >
-              Join
-            </Button>
+            <Button mode="outlined" onPress={() => setShowBusinessModal(true)}>Create</Button>
+            <Button mode="outlined" onPress={() => setShowJoinModal(true)}>Join</Button>
           </View>
         </View>
 
         <View style={styles.identityCard}>
           <Text style={styles.userName}>Your Businesses</Text>
-          
+
           <Text style={styles.teamLabel}>Owned:</Text>
           {ownedBusinesses.length > 0 ? (
             ownedBusinesses.map((biz) => (
-              <TouchableOpacity
-                key={biz.id}
-                onPress={() => setSelectedBusiness(biz)}
-              >
+              <TouchableOpacity key={biz.id} onPress={() => setSelectedBusiness(biz)}>
                 <Text style={styles.businessItem}>• {biz.name}</Text>
               </TouchableOpacity>
             ))
@@ -347,9 +334,7 @@ export default function AccountScreen() {
           <Text style={styles.teamLabel}>Joined:</Text>
           {joinedBusinesses.length > 0 ? (
             joinedBusinesses.map((biz) => (
-              <Text key={biz.id} style={styles.businessItem}>
-                • {biz.name}
-              </Text>
+              <Text key={biz.id} style={styles.businessItem}>• {biz.name}</Text>
             ))
           ) : (
             <Text style={styles.businessItem}>None</Text>
