@@ -23,21 +23,13 @@ import { useUser } from '../context/UserContext';
 import { getBusinesses, createInvite } from '../lib/helpers/business';
 import { uploadAvatar } from '../lib/helpers/uploadAvatar';
 import LoaderOverlay from '../components/LoaderOverlay';
-import ChangelogModal, { 
-  CHANGELOG_KEY, 
-  CHANGELOG_VERSION 
-} from '../components/ChangelogModal';
+import ChangelogModal, { CHANGELOG_KEY, CHANGELOG_VERSION } from '../components/ChangelogModal';
 import BusinessModal from '../components/BusinessModal';
 import JoinBusinessModal from '../components/JoinBusinessModal';
 import AvatarPreviewModal from '../components/AvatarPreviewModal';
 
 export default function AccountScreen() {
-  const { 
-    user, 
-    refreshUser, 
-    loading: userLoading, 
-    error: userError 
-  } = useUser();
+  const { user, refreshUser, loading: userLoading, error: userError } = useUser();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,28 +47,19 @@ export default function AccountScreen() {
   const router = useRouter();
 
   useLayoutEffect(() => {
-    navigation.getParent()?.setOptions({
-      tabBarStyle: { display: 'none' }
-    });
-    
-    return () => navigation.getParent()?.setOptions({
-      tabBarStyle: { display: 'flex' }
-    });
+    navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
+    return () => navigation.getParent()?.setOptions({ tabBarStyle: { display: 'flex' } });
   }, [navigation]);
 
   const loadBusinesses = async () => {
     try {
       const seen = await AsyncStorage.getItem(CHANGELOG_KEY);
       if (!seen) setShowChangelog(true);
-      
       const data = await getBusinesses();
       setOwnedBusinesses(data?.owned || []);
       setJoinedBusinesses(data?.joined || []);
     } catch {
-      Toast.show({
-        type: 'errorToast',
-        text1: 'Failed to load businesses.'
-      });
+      Toast.show({ type: 'errorToast', text1: 'Failed to load businesses.' });
       setOwnedBusinesses([]);
       setJoinedBusinesses([]);
     }
@@ -108,38 +91,28 @@ export default function AccountScreen() {
   const pickAndPreviewAvatar = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      return Toast.show({
-        type: 'warningToast',
-        text1: 'Photo access denied.'
-      });
+      return Toast.show({ type: 'warningToast', text1: 'Photo access denied.' });
     }
-    
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.7,
     });
-    
+
     if (result.canceled || !result.assets?.length) return;
-    
     setPreviewUri(result.assets[0].uri);
   };
 
   const confirmUploadAvatar = async () => {
     if (!previewUri) return;
-    
+
     try {
       await uploadAvatar(previewUri);
-      Toast.show({
-        type: 'successToast',
-        text1: 'Avatar updated!'
-      });
+      Toast.show({ type: 'successToast', text1: 'Avatar updated!' });
       await reloadFullProfile();
     } catch {
-      Toast.show({
-        type: 'errorToast',
-        text1: 'Upload failed.'
-      });
+      Toast.show({ type: 'errorToast', text1: 'Upload failed.' });
     } finally {
       setPreviewUri(null);
     }
@@ -147,10 +120,7 @@ export default function AccountScreen() {
 
   const confirmLogout = async () => {
     await SecureStore.deleteItemAsync('auth_token');
-    Toast.show({
-      type: 'warningToast',
-      text1: 'Logged out successfully'
-    });
+    Toast.show({ type: 'warningToast', text1: 'Logged out successfully' });
     setShowLogoutConfirm(false);
     router.replace('/login');
   };
@@ -160,34 +130,15 @@ export default function AccountScreen() {
     setShowChangelog(false);
   };
 
-  if (userLoading || loading) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0e0e11' }}>
-        <LoaderOverlay visible />
-      </SafeAreaView>
-    );
-  }
-
-  if (userError) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.error}>
-          Failed to load account. Check your connection.
-        </Text>
-        <Button onPress={reloadFullProfile}>Retry</Button>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
-      {/* Loader overlay appears on top without replacing background */}
+      {/* LoaderOverlay appears on top without blocking layout */}
       <LoaderOverlay visible={userLoading || loading} />
 
       {showChangelog && (
         <ChangelogModal visible onClose={dismissChangelog} />
       )}
-      
+
       {previewUri && (
         <AvatarPreviewModal
           visible
@@ -196,7 +147,7 @@ export default function AccountScreen() {
           onConfirm={confirmUploadAvatar}
         />
       )}
-      
+
       {showBusinessModal && (
         <BusinessModal
           visible
@@ -204,7 +155,7 @@ export default function AccountScreen() {
           onCreate={reloadFullProfile}
         />
       )}
-      
+
       {showJoinModal && (
         <JoinBusinessModal
           visible
@@ -220,44 +171,32 @@ export default function AccountScreen() {
               <Text style={styles.modalText}>
                 Generate invite link for "{selectedBusiness.name}"?
               </Text>
-              
+
               {!inviteLink ? (
-                <Button
-                  mode="contained"
-                  onPress={async () => {
-                    try {
-                      const res = await createInvite(selectedBusiness.id);
-                      setInviteLink(res?.code || 'No code');
-                    } catch {}
-                  }}
-                >
+                <Button mode="contained" onPress={async () => {
+                  try {
+                    const res = await createInvite(selectedBusiness.id);
+                    setInviteLink(res?.code || 'No code');
+                  } catch {}
+                }}>
                   Generate Link
                 </Button>
               ) : (
                 <>
-                  <Text selectable style={styles.code}>
-                    {inviteLink}
-                  </Text>
-                  <Button
-                    onPress={() => {
-                      Clipboard.setStringAsync(inviteLink);
-                      Toast.show({
-                        type: 'successToast',
-                        text1: 'Copied to clipboard!'
-                      });
-                    }}
-                  >
+                  <Text selectable style={styles.code}>{inviteLink}</Text>
+                  <Button onPress={() => {
+                    Clipboard.setStringAsync(inviteLink);
+                    Toast.show({ type: 'successToast', text1: 'Copied to clipboard!' });
+                  }}>
                     Copy
                   </Button>
                 </>
               )}
-              
-              <Button
-                onPress={() => {
-                  setSelectedBusiness(null);
-                  setInviteLink(null);
-                }}
-              >
+
+              <Button onPress={() => {
+                setSelectedBusiness(null);
+                setInviteLink(null);
+              }}>
                 Close
               </Button>
             </View>
@@ -277,11 +216,7 @@ export default function AccountScreen() {
       >
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => router.back()}>
-            <MaterialCommunityIcons
-              name="arrow-left"
-              size={24}
-              color="#bd93f9"
-            />
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
           </TouchableOpacity>
           <Text style={styles.header}>Account</Text>
         </View>
@@ -289,13 +224,10 @@ export default function AccountScreen() {
         <View style={styles.identityCard}>
           <View style={styles.identityRow}>
             <View>
-              <Text style={styles.userName}>
-                {user?.username || 'No name'}
-              </Text>
+              <Text style={styles.userName}>{user?.username || 'No name'}</Text>
               <Text style={styles.accountType}>StockApp Account</Text>
               <Text style={styles.version}>v{CHANGELOG_VERSION}</Text>
             </View>
-            
             <TouchableOpacity onPress={pickAndPreviewAvatar}>
               <Avatar.Image
                 size={60}
@@ -342,15 +274,8 @@ export default function AccountScreen() {
         </View>
 
         <View style={styles.logoutCard}>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={() => setShowLogoutConfirm(true)}
-          >
-            <MaterialCommunityIcons
-              name="logout"
-              size={22}
-              color="#ff6b6b"
-            />
+          <TouchableOpacity style={styles.logoutButton} onPress={() => setShowLogoutConfirm(true)}>
+            <MaterialCommunityIcons name="logout" size={22} color="#ff6b6b" />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
@@ -361,28 +286,13 @@ export default function AccountScreen() {
             onDismiss={() => setShowLogoutConfirm(false)}
             style={styles.dialog}
           >
-            <Dialog.Title style={styles.dialogTitle}>
-              Confirm Logout
-            </Dialog.Title>
+            <Dialog.Title style={styles.dialogTitle}>Confirm Logout</Dialog.Title>
             <Dialog.Content>
-              <Text style={styles.dialogText}>
-                Are you sure you want to log out?
-              </Text>
+              <Text style={styles.dialogText}>Are you sure you want to log out?</Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
-              <Button
-                onPress={() => setShowLogoutConfirm(false)}
-                style={styles.dialogCancel}
-              >
-                No
-              </Button>
-              <Button
-                mode="outlined"
-                onPress={confirmLogout}
-                style={styles.dialogConfirm}
-              >
-                Yes
-              </Button>
+              <Button onPress={() => setShowLogoutConfirm(false)} style={styles.dialogCancel}>No</Button>
+              <Button mode="outlined" onPress={confirmLogout} style={styles.dialogConfirm}>Yes</Button>
             </Dialog.Actions>
           </Dialog>
         </Portal>
@@ -392,127 +302,28 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0e0e11'
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 10
-  },
-  header: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#bd93f9'
-  },
-  identityCard: {
-    backgroundColor: '#282a36',
-    margin: 16,
-    borderRadius: 12,
-    padding: 16
-  },
-  identityRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  userName: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold'
-  },
-  accountType: {
-    color: '#888',
-    fontSize: 14,
-    marginTop: 4
-  },
-  version: {
-    color: '#999',
-    marginTop: 4
-  },
-  teamLabel: {
-    color: '#ccc',
-    marginTop: 8,
-    fontWeight: '600'
-  },
-  businessItem: {
-    color: '#fff',
-    marginTop: 4,
-    fontSize: 15
-  },
-  logoutCard: {
-    backgroundColor: '#282a36',
-    margin: 16,
-    borderRadius: 12,
-    padding: 12
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12
-  },
-  logoutText: {
-    color: '#ff6b6b',
-    fontSize: 16,
-    fontWeight: '600'
-  },
-  dialog: {
-    backgroundColor: '#282a36',
-    borderRadius: 12
-  },
-  dialogTitle: {
-    color: '#f8f8f2',
-    fontWeight: 'bold'
-  },
-  dialogText: {
-    color: '#ccc',
-    fontSize: 15
-  },
-  dialogActions: {
-    justifyContent: 'space-between',
-    paddingHorizontal: 12
-  },
-  dialogCancel: {
-    backgroundColor: '#bd93f9',
-    borderRadius: 6,
-    marginRight: 8
-  },
-  dialogConfirm: {
-    borderColor: '#ff5555',
-    borderWidth: 1,
-    borderRadius: 6
-  },
-  error: {
-    color: '#ff5555',
-    padding: 20,
-    textAlign: 'center'
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  inviteModal: {
-    backgroundColor: '#282a36',
-    margin: 32,
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center'
-  },
-  modalText: {
-    color: '#fff',
-    fontSize: 16,
-    marginBottom: 12,
-    textAlign: 'center'
-  },
-  code: {
-    color: '#bd93f9',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 12,
-    marginBottom: 12
-  },
+  container: { flex: 1, backgroundColor: '#0e0e11' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 10 },
+  header: { fontSize: 22, fontWeight: 'bold', color: '#bd93f9' },
+  identityCard: { backgroundColor: '#282a36', margin: 16, borderRadius: 12, padding: 16 },
+  identityRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  userName: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  accountType: { color: '#888', fontSize: 14, marginTop: 4 },
+  version: { color: '#999', marginTop: 4 },
+  teamLabel: { color: '#ccc', marginTop: 8, fontWeight: '600' },
+  businessItem: { color: '#fff', marginTop: 4, fontSize: 15 },
+  logoutCard: { backgroundColor: '#282a36', margin: 16, borderRadius: 12, padding: 12 },
+  logoutButton: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logoutText: { color: '#ff6b6b', fontSize: 16, fontWeight: '600' },
+  dialog: { backgroundColor: '#282a36', borderRadius: 12 },
+  dialogTitle: { color: '#f8f8f2', fontWeight: 'bold' },
+  dialogText: { color: '#ccc', fontSize: 15 },
+  dialogActions: { justifyContent: 'space-between', paddingHorizontal: 12 },
+  dialogCancel: { backgroundColor: '#bd93f9', borderRadius: 6, marginRight: 8 },
+  dialogConfirm: { borderColor: '#ff5555', borderWidth: 1, borderRadius: 6 },
+  error: { color: '#ff5555', padding: 20, textAlign: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.6)', justifyContent: 'center', alignItems: 'center' },
+  inviteModal: { backgroundColor: '#282a36', margin: 32, padding: 20, borderRadius: 12, alignItems: 'center' },
+  modalText: { color: '#fff', fontSize: 16, marginBottom: 12, textAlign: 'center' },
+  code: { color: '#bd93f9', fontSize: 18, fontWeight: 'bold', marginTop: 12, marginBottom: 12 },
 });
