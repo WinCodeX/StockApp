@@ -160,7 +160,13 @@ export default function AccountScreen() {
     setShowChangelog(false);
   };
 
-  if (userLoading || loading) return <LoaderOverlay visible />;
+  if (userLoading || loading) {
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0e0e11' }}>
+      <LoaderOverlay visible />
+    </SafeAreaView>
+  );
+}
 
   if (userError) {
     return (
