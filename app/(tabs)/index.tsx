@@ -6,7 +6,7 @@ import {
   FlatList, 
   ActivityIndicator 
 } from 'react-native';
-import { Button, Card } from 'react-native-paper';
+import { Button, Card, FAB } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -122,6 +122,13 @@ export default function Dashboard() {
         )}
       </View>
 
+      {/* FAB for Chat */}
+      <FAB
+        icon="message-outline"
+        style={styles.fab}
+        onPress={() => router.push('/(tabs)/chatlist')}
+      />
+
       <ChangelogModal 
         visible={showChangelog} 
         onClose={dismissChangelog} 
@@ -187,5 +194,21 @@ const styles = StyleSheet.create({
   quickActions: {
     marginTop: 20,
     gap: 10,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 120,
+    backgroundColor: colors.primary,
+    borderRadius: 28,
+    height: 56,
+    width: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
 });
