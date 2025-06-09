@@ -126,7 +126,7 @@ export default function Dashboard() {
       <FAB
         icon="message-outline"
         style={styles.fab}
-        onPress={() => router.push('/chatlist')}
+        onPress={() => router.push('/(tabs)/chatlist')}
       />
 
       <ChangelogModal 
