@@ -22,7 +22,7 @@ export const getProducts = async (
 
   const pageKey = buildPageKey(page, '');
   const allKey = buildAllKey('');
-  const params = { page, per_page: 10 }; // ✅ Added per_page
+  const params = { page, per_page: 10 }; // ✅ Ensure pagination
 
   const fetchAndCache = async () => {
     const res = await api.get('/api/v1/products', {
@@ -32,6 +32,9 @@ export const getProducts = async (
 
     const products = res.data.products.data || [];
     const meta = res.data.products.meta || {};
+
+    // 🔍 Log meta response for debugging
+    console.log(`📊 Meta Page ${page}:`, meta);
 
     const validated = products.map((product: any) => ({
       ...product,
@@ -43,10 +46,8 @@ export const getProducts = async (
       },
     }));
 
-    // Store individual page
     await AsyncStorage.setItem(pageKey, JSON.stringify({ products: validated, meta }));
 
-    // Merge into global cache
     const existingAll = await AsyncStorage.getItem(allKey);
     const existingList = existingAll ? JSON.parse(existingAll).products : [];
 
@@ -79,15 +80,14 @@ export const getProducts = async (
     }
   }
 
-  // Try cache for specific page
   const cachedPage = await AsyncStorage.getItem(pageKey);
   if (cachedPage) {
     const { products, meta } = JSON.parse(cachedPage);
     console.log(`📦 Loaded page ${page} from cache`);
+    console.log(`📊 Meta Page ${page} (from cache):`, meta);
     return { products, meta };
   }
 
-  // Fallback to global offline cache
   const cachedAll = await AsyncStorage.getItem(allKey);
   if (cachedAll) {
     const { products } = JSON.parse(cachedAll);
