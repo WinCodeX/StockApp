@@ -3,15 +3,12 @@
 import React, { useEffect } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export const CHANGELOG_VERSION = '1.2.8';
+export const CHANGELOG_VERSION = '1.2.9';
 export const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 const autoDismissDelay = 7000;
 
 const CHANGELOG_CONTENT = [
-  'Added stock history',
-  'Added Qr code on each product',
-  'Added business link generator, when selecting a business',
-  'Added copy feature for the invite link',
+  'fixed products not showing',
   'New UI polish',
   'Some Bug fixes',
 ];
