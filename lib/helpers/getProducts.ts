@@ -30,13 +30,12 @@ export const getProducts = async (
       params,
     });
 
-    // 🧠 Safe destructuring
     const response = res.data || {};
     const productBlock = response.products || {};
     const products = productBlock.data || [];
     const meta = productBlock.meta || {};
 
-    console.log(`✅ Meta from API page ${page}:`, meta);
+    console.log(`✅ Meta from API (page ${page}):`, meta);
 
     const validated = products.map((product: any) => ({
       ...product,
@@ -48,9 +47,10 @@ export const getProducts = async (
       },
     }));
 
+    // Save individual page
     await AsyncStorage.setItem(pageKey, JSON.stringify({ products: validated, meta }));
 
-    // 🌐 Merge into offline global cache
+    // Merge into offline global cache
     const existingAll = await AsyncStorage.getItem(allKey);
     const existingList = existingAll ? JSON.parse(existingAll).products : [];
 
@@ -69,8 +69,8 @@ export const getProducts = async (
     try {
       console.log('🔥 Force-refreshing from live API...');
       return await fetchAndCache();
-    } catch {
-      console.warn('🔥 Force-refresh failed, trying cache...');
+    } catch (err) {
+      console.warn('🔥 Force-refresh failed, using cache fallback...');
     }
   }
 
@@ -78,21 +78,21 @@ export const getProducts = async (
     try {
       console.log('🌐 Fetching from live API...');
       return await fetchAndCache();
-    } catch {
-      console.warn('❌ Live fetch failed, trying cache...');
+    } catch (err) {
+      console.warn('❌ Live fetch failed, using cache fallback...');
     }
   }
 
-  // 📦 Offline cache: page
+  // Fallback: Try individual page cache
   const cachedPage = await AsyncStorage.getItem(pageKey);
   if (cachedPage) {
     const { products, meta } = JSON.parse(cachedPage);
     console.log(`📦 Loaded page ${page} from cache`);
-    console.log(`📊 Meta from cache page ${page}:`, meta);
+    console.log(`📊 Meta from cache (page ${page}):`, meta);
     return { products, meta };
   }
 
-  // 📦 Offline fallback: all pages
+  // Fallback: Use global offline merged cache
   const cachedAll = await AsyncStorage.getItem(allKey);
   if (cachedAll) {
     const { products } = JSON.parse(cachedAll);
