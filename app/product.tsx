@@ -275,6 +275,7 @@ export default function ProductsScreen() {
         <Text style={styles.endText}>
           No more products to load
         </Text>
+<Button onPress={() => getProducts(page, true)}>Load More</Button>
       );
     }
     
