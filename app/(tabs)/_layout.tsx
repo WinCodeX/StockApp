@@ -49,7 +49,7 @@ export default function TabLayout() {
             switch (route.name) {
               case 'index': iconName = focused ? 'home' : 'home-outline'; break;
               case 'product': iconName = focused ? 'cube' : 'cube-outline'; break;
-              case 'chat': iconName = focused ? 'chatbubbles' : 'chatbubbles-outline'; break; // Chat icon
+              case 'chatlist': iconName = focused ? 'chatbubbles' : 'chatbubbles-outline'; break; // Chat icon
               case 'search': iconName = focused ? 'search' : 'search-outline'; break;
               case 'account': iconName = focused ? 'person' : 'person-outline'; break;
             }
