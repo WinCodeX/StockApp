@@ -60,7 +60,7 @@ export default function ProductsScreen() {
           : newProducts
       );
 
-      setPage(prev => meta.current_page + 1);
+      setPage(meta.current_page + 1); // ✅ Ensure nextPage is based on API response
       setHasMore(meta.has_more ?? false);
 
       console.log(`📦 Page ${meta.current_page} fetched. ${newProducts.length} products. More: ${meta.has_more}`);
@@ -174,63 +174,67 @@ export default function ProductsScreen() {
         />
       </View>
 
-      <FlatList
-        data={products}
-        keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        onEndReached={() => fetchProducts(page, true)}
-        onEndReachedThreshold={0.1}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        ListFooterComponent={isFetchingMore ? <LoaderOverlay visible /> : null}
-        ListEmptyComponent={
-          !loading && (
-            <Text style={{ color: '#999', textAlign: 'center', marginTop: 20 }}>
-              No products found or offline.
-            </Text>
-          )
-        }
-        renderItem={({ item }) => (
-          <Card style={styles.card}>
-            <View style={styles.cardContent}>
-              <Image
-                source={
-                  item.attributes.image_url
-                    ? {
-                        uri: item.attributes.image_url.startsWith('/')
-                          ? `${BASE_URL}${item.attributes.image_url}`
-                          : item.attributes.image_url,
-                      }
-                    : defaultProductImage
-                }
-                style={styles.image}
-                resizeMode="cover"
-              />
-
-              <View style={{ flex: 1 }}>
-                <Text style={styles.title}>{item.attributes.name}</Text>
-                <Text style={styles.subtitle}>Stock: {item.attributes.total_stock}</Text>
-                <Text style={styles.subtitle}>KES {item.attributes.price}</Text>
+      <View style={{ flex: 1 }}>
+        <FlatList
+          data={products}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          onEndReached={() => {
+            console.log(`🔽 Reached end of list. Fetching page ${page}...`);
+            fetchProducts(page, true);
+          }}
+          onEndReachedThreshold={0.3}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          initialNumToRender={10}
+          removeClippedSubviews={false}
+          ListFooterComponent={isFetchingMore ? <LoaderOverlay visible /> : null}
+          ListEmptyComponent={
+            !loading && (
+              <Text style={{ color: '#999', textAlign: 'center', marginTop: 20 }}>
+                No products found or offline.
+              </Text>
+            )
+          }
+          renderItem={({ item }) => (
+            <Card style={styles.card}>
+              <View style={styles.cardContent}>
+                <Image
+                  source={
+                    item.attributes.image_url
+                      ? {
+                          uri: item.attributes.image_url.startsWith('/')
+                            ? `${BASE_URL}${item.attributes.image_url}`
+                            : item.attributes.image_url,
+                        }
+                      : defaultProductImage
+                  }
+                  style={styles.image}
+                  resizeMode="cover"
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.title}>{item.attributes.name}</Text>
+                  <Text style={styles.subtitle}>Stock: {item.attributes.total_stock}</Text>
+                  <Text style={styles.subtitle}>KES {item.attributes.price}</Text>
+                </View>
+                <View style={styles.counterButtons}>
+                  <TouchableOpacity style={styles.counterButton}>
+                    <Text style={styles.counterText}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.counterQuantity}>0</Text>
+                  <TouchableOpacity style={styles.counterButton}>
+                    <Text style={styles.counterText}>+</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-
-              <View style={styles.counterButtons}>
-                <TouchableOpacity style={styles.counterButton}>
-                  <Text style={styles.counterText}>-</Text>
-                </TouchableOpacity>
-                <Text style={styles.counterQuantity}>0</Text>
-                <TouchableOpacity style={styles.counterButton}>
-                  <Text style={styles.counterText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <Card.Actions>
-              <Button onPress={() => openViewStockModal(item)}>View Stock</Button>
-              <Button onPress={() => openAddStockModal(item)}>Add Stock</Button>
-            </Card.Actions>
-          </Card>
-        )}
-      />
+              <Card.Actions>
+                <Button onPress={() => openViewStockModal(item)}>View Stock</Button>
+                <Button onPress={() => openAddStockModal(item)}>Add Stock</Button>
+              </Card.Actions>
+            </Card>
+          )}
+        />
+      </View>
 
       <FAB
         icon="plus"
