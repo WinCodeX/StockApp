@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { getConversations } from '../lib/helpers/getConversations'; // Assume this function handles fetching the conversations from the backend
-import { colors } from '../theme/colors';
+import Colors from '../theme/colors';
 
 const ChatListScreen = () => {
   const router = useRouter();
