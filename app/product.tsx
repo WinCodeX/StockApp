@@ -27,7 +27,7 @@ import { searchProducts } from '../lib/helpers/searchProducts';
 
 const PAGE_SIZE = 10;
 const MAX_RETRIES = 3;
-const ITEM_HEIGHT = 140; // Approximate height of each card
+const ITEM_HEIGHT = 140;
 
 export default function ProductsScreen() {
   const router = useRouter();
@@ -38,10 +38,10 @@ export default function ProductsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState('');
-  const [modalType, setModalType] = useState<'add' | 'view'>('add');
+  const [modalType, setModalType] = useState('add');
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1); // Renamed for clarity
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -52,12 +52,17 @@ export default function ProductsScreen() {
   }, []);
 
   const fetchProducts = async (
-    nextPage = 1,
+    pageToFetch = 1,
     isLoadMore = false,
     forceRefresh = false
   ) => {
-    if (isLoadMore && (!hasMore || isFetchingMore)) return;
+    // Prevent duplicate requests
+    if (isLoadMore && (!hasMore || isFetchingMore)) {
+      console.log('⛔ Preventing duplicate request - hasMore:', hasMore, 'isFetchingMore:', isFetchingMore);
+      return;
+    }
 
+    // Set loading states
     if (!isLoadMore) {
       setLoading(true);
     } else {
@@ -65,58 +70,83 @@ export default function ProductsScreen() {
     }
 
     try {
+      console.log(`🔄 Fetching page ${pageToFetch} (isLoadMore: ${isLoadMore}, forceRefresh: ${forceRefresh})`);
+      
       const { products: newProducts, meta } = await getProducts(
-        nextPage,
+        pageToFetch,
         forceRefresh,
         PAGE_SIZE
       );
 
-      setProducts(prev =>
-        isLoadMore && nextPage > 1
-          ? [...prev, ...newProducts.filter(p => !prev.some(pp => pp.id === p.id))]
-          : newProducts
-      );
+      console.log(`📥 Received ${newProducts.length} products for page ${pageToFetch}`);
+      console.log('📊 Meta:', meta);
 
-      if (typeof meta.current_page === 'number' && !isNaN(meta.current_page)) {
-        setPage(meta.current_page + 1);
-        setHasMore(meta.has_more ?? false);
+      // Update products list
+      setProducts(prev => {
+        if (isLoadMore && pageToFetch > 1) {
+          // Filter out duplicates when loading more
+          const existingIds = new Set(prev.map(p => p.id));
+          const uniqueNewProducts = newProducts.filter(p => !existingIds.has(p.id));
+          console.log(`➕ Adding ${uniqueNewProducts.length} new products to existing ${prev.length}`);
+          return [...prev, ...uniqueNewProducts];
+        } else {
+          // Replace all products (refresh or initial load)
+          console.log(`🔄 Replacing ${prev.length} products with ${newProducts.length} new products`);
+          return newProducts;
+        }
+      });
+
+      // Update pagination state manually
+      if (isLoadMore) {
+        // When loading more, increment the current page
+        setCurrentPage(pageToFetch + 1);
+        console.log(`📄 Next page will be: ${pageToFetch + 1}`);
       } else {
-        console.warn('⚠️ Invalid pagination meta:', meta);
-        setHasMore(false);
+        // When refreshing or initial load, set next page
+        setCurrentPage(2);
+        console.log('📄 Reset to page 2 for next load');
       }
+
+      // Update hasMore based on meta or products received
+      const shouldHaveMore = meta?.has_more ?? (newProducts.length >= PAGE_SIZE);
+      setHasMore(shouldHaveMore);
+      console.log(`🔄 Has more pages: ${shouldHaveMore}`);
 
       // Reset retry count on successful fetch
       setRetryCount(0);
 
-      console.log(
-        `📦 Page ${meta.current_page} fetched. ${newProducts.length} products. More: ${meta.has_more}`
-      );
     } catch (err) {
-      console.error('Failed to fetch products:', err);
+      console.error(`❌ Failed to fetch page ${pageToFetch}:`, err);
 
-      // Retry logic for failed requests
+      // Retry logic with exponential backoff
       if (retryCount < MAX_RETRIES) {
-        const delay = 1000 * Math.pow(2, retryCount); // Exponential backoff
+        const delay = 1000 * Math.pow(2, retryCount);
+        console.log(`⏳ Retrying in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        
         setTimeout(() => {
           setRetryCount(prev => prev + 1);
-          fetchProducts(nextPage, isLoadMore, forceRefresh);
+          fetchProducts(pageToFetch, isLoadMore, forceRefresh);
         }, delay);
         return;
       }
 
-      // Only show error toast for initial load failures or after max retries
-      if (!isLoadMore || retryCount >= MAX_RETRIES) {
-        Toast.show({
-          type: 'errorToast',
-          text1: retryCount >= MAX_RETRIES 
-            ? 'Failed to load products after multiple attempts'
-            : 'Failed to load products',
-          text2: 'Showing offline data if available'
-        });
+      // Show error after max retries
+      Toast.show({
+        type: 'errorToast',
+        text1: retryCount >= MAX_RETRIES 
+          ? 'Failed to load products after multiple attempts' 
+          : 'Failed to load products',
+        text2: 'Showing offline data if available'
+      });
+
+      // Reset retry count
+      setRetryCount(0);
+
+      // If this was a pagination request that failed, don't increment page
+      if (isLoadMore) {
+        console.log('📄 Pagination failed, keeping current page state');
       }
 
-      // Reset retry count after showing error
-      setRetryCount(0);
     } finally {
       setLoading(false);
       setIsFetchingMore(false);
@@ -124,13 +154,15 @@ export default function ProductsScreen() {
   };
 
   const debouncedSearch = useCallback(
-    debounce(async (text: string) => {
+    debounce(async (text) => {
       setIsSearching(true);
       try {
+        console.log(`🔍 Searching for: "${text}"`);
         const data = await searchProducts(text);
         setProducts(data);
         setHasMore(false); // Search results don't support pagination
-        setPage(1);
+        setCurrentPage(1);
+        console.log(`🔍 Found ${data.length} search results`);
       } catch (err) {
         console.error('Search failed:', err);
         Toast.show({
@@ -145,38 +177,40 @@ export default function ProductsScreen() {
     []
   );
 
-  const handleSearch = (text: string) => {
+  const handleSearch = (text) => {
     setSearchQuery(text);
 
     if (!text.trim()) {
-      // Reset to normal browsing mode
-      setPage(1);
+      // Exit search mode and return to normal pagination
+      console.log('🔍 Exiting search mode');
+      setCurrentPage(1);
       setHasMore(true);
       setIsSearching(false);
       fetchProducts(1, false, true);
-      return;
+    } else {
+      // Enter search mode
+      console.log('🔍 Entering search mode');
+      setCurrentPage(1);
+      setHasMore(false);
+      debouncedSearch(text.trim());
     }
-
-    // Reset pagination state for search
-    setPage(1);
-    setHasMore(false);
-    debouncedSearch(text.trim());
   };
 
   const onRefresh = async () => {
+    console.log('🔄 Refreshing...');
     setRefreshing(true);
-    setPage(1);
+    setCurrentPage(1);
     setHasMore(true);
     setRetryCount(0);
-    
+
     if (searchQuery.trim()) {
-      // If we're in search mode, refresh search results
+      // Refresh search results
       debouncedSearch(searchQuery.trim());
     } else {
-      // Otherwise refresh products list
+      // Refresh products list
       await fetchProducts(1, false, true);
     }
-    
+
     setRefreshing(false);
   };
 
@@ -197,7 +231,7 @@ export default function ProductsScreen() {
       Toast.show({
         type: 'errorToast',
         text1: 'Invalid quantity',
-        text2: 'Please enter a valid positive number'
+        text2: 'Enter a valid positive number'
       });
       return;
     }
@@ -211,18 +245,18 @@ export default function ProductsScreen() {
         type: 'successToast',
         text1: 'Stock added successfully!'
       });
-      
+
       setModalVisible(false);
       setQuantity('');
-      
-      // Refresh the current view
+
+      // Refresh current view
       if (searchQuery.trim()) {
         debouncedSearch(searchQuery.trim());
       } else {
         await fetchProducts(1, false, true);
       }
-    } catch (error) {
-      console.error('Failed to add stock:', error);
+    } catch (err) {
+      console.error('Failed to add stock:', err);
       Toast.show({
         type: 'errorToast',
         text1: 'Failed to add stock',
@@ -238,8 +272,8 @@ export default function ProductsScreen() {
         type: 'successToast',
         text1: 'Product created successfully!'
       });
-      
-      // Refresh the current view
+
+      // Refresh current view
       if (searchQuery.trim()) {
         debouncedSearch(searchQuery.trim());
       } else {
@@ -256,12 +290,18 @@ export default function ProductsScreen() {
   };
 
   const handleEndReached = () => {
-    // Don't load more if we're searching or already fetching
-    if (isSearching || searchQuery.trim()) return;
-    
-    if (!isFetchingMore && hasMore && !isNaN(page)) {
-      console.log(`🔽 Reached end of list. Fetching page ${page}...`);
-      fetchProducts(page, true);
+    // Don't load more if we're searching
+    if (isSearching || searchQuery.trim()) {
+      console.log('⛔ Skip end reached - in search mode');
+      return;
+    }
+
+    // Don't load more if already fetching or no more pages
+    if (!isFetchingMore && hasMore && currentPage > 0) {
+      console.log(`🔽 End reached. Fetching page ${currentPage}...`);
+      fetchProducts(currentPage, true);
+    } else {
+      console.log(`⛔ Skip end reached - isFetchingMore: ${isFetchingMore}, hasMore: ${hasMore}, currentPage: ${currentPage}`);
     }
   };
 
@@ -269,34 +309,33 @@ export default function ProductsScreen() {
     if (isFetchingMore) {
       return <LoaderOverlay visible />;
     }
-    
+
     if (!hasMore && products.length > 0 && !searchQuery.trim()) {
       return (
         <Text style={styles.endText}>
           No more products to load
         </Text>
-
       );
     }
-    
+
     return null;
   };
 
   const renderEmpty = () => {
     if (loading || isSearching) return null;
-    
+
     return (
       <View style={styles.emptyContainer}>
-        <MaterialCommunityIcons 
-          name="package-variant" 
-          size={48} 
-          color="#999" 
+        <MaterialCommunityIcons
+          name="package-variant"
+          size={48}
+          color="#999"
         />
         <Text style={styles.emptyText}>
           {searchQuery.trim() ? 'No products found' : 'No products available'}
         </Text>
         <Text style={styles.emptySubtext}>
-          {searchQuery.trim() 
+          {searchQuery.trim()
             ? 'Try adjusting your search terms'
             : 'Add some products to get started'
           }
@@ -331,14 +370,14 @@ export default function ProductsScreen() {
           style={styles.searchInput}
         />
         {(isSearching || searchQuery.trim()) && (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => handleSearch('')}
             style={styles.clearButton}
           >
-            <MaterialCommunityIcons 
-              name="close" 
-              size={20} 
-              color="#999" 
+            <MaterialCommunityIcons
+              name="close"
+              size={20}
+              color="#999"
             />
           </TouchableOpacity>
         )}
