@@ -49,7 +49,7 @@ export default function TabLayout() {
             switch (route.name) {
               case 'index': iconName = focused ? 'home' : 'home-outline'; break;
               case 'product': iconName = focused ? 'cube' : 'cube-outline'; break;
-              case 'sales': iconName = focused ? 'trending-up' : 'trending-up-outline'; break;
+              case 'chat': iconName = focused ? 'chatbubbles' : 'chatbubbles-outline'; break; // Chat icon
               case 'search': iconName = focused ? 'search' : 'search-outline'; break;
               case 'account': iconName = focused ? 'person' : 'person-outline'; break;
             }
@@ -63,7 +63,7 @@ export default function TabLayout() {
       >
         <Tabs.Screen name="index" options={{ title: 'Home', tabBarLabel: 'Home' }} />
         <Tabs.Screen name="product" options={{ title: 'Products', tabBarLabel: 'Products' }} />
-        <Tabs.Screen name="sales" options={{ title: 'Sales', tabBarLabel: 'Sales' }} />
+        <Tabs.Screen name="chatlist" options={{ title: 'Chat', tabBarLabel: 'Chat' }} /> {/* Chat tab */}
         <Tabs.Screen name="search" options={{ title: 'Search', tabBarLabel: 'Search' }} />
         <Tabs.Screen name="account" options={{ title: 'Account', tabBarLabel: 'Account' }} />
       </Tabs>
