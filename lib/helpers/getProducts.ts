@@ -22,8 +22,7 @@ export const getProducts = async (
 
   const pageKey = buildPageKey(page, '');
   const allKey = buildAllKey('');
-
-  const params = { page };
+  const params = { page, per_page: 10 }; // ✅ Added per_page
 
   const fetchAndCache = async () => {
     const res = await api.get('/api/v1/products', {
@@ -51,9 +50,9 @@ export const getProducts = async (
     const existingAll = await AsyncStorage.getItem(allKey);
     const existingList = existingAll ? JSON.parse(existingAll).products : [];
 
-    // Avoid duplicates by ID
+    const validatedIds = new Set(validated.map(p => p.id));
     const allMerged = [
-      ...existingList.filter((p: any) => !validated.some((v) => v.id === p.id)),
+      ...existingList.filter(p => !validatedIds.has(p.id)),
       ...validated,
     ];
 
@@ -93,7 +92,15 @@ export const getProducts = async (
   if (cachedAll) {
     const { products } = JSON.parse(cachedAll);
     console.log('📦 Loaded from all-pages offline cache');
-    return { products, meta: { page: 1, total_pages: 1 } };
+    return {
+      products,
+      meta: {
+        current_page: 1,
+        total_pages: 1,
+        has_more: false,
+        total_count: products.length,
+      },
+    };
   }
 
   throw new Error('No internet and no cached data available.');
