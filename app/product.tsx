@@ -60,8 +60,10 @@ export default function ProductsScreen() {
           : newProducts
       );
 
-      setPage(meta.current_page + 1);
+      setPage(prev => meta.current_page + 1);
       setHasMore(meta.has_more ?? false);
+
+      console.log(`📦 Page ${meta.current_page} fetched. ${newProducts.length} products. More: ${meta.has_more}`);
     } catch (err) {
       Toast.show({
         type: 'warningToast',
@@ -177,7 +179,7 @@ export default function ProductsScreen() {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ paddingBottom: 100 }}
         onEndReached={() => fetchProducts(page, true)}
-        onEndReachedThreshold={0.4}
+        onEndReachedThreshold={0.1}
         refreshing={refreshing}
         onRefresh={onRefresh}
         ListFooterComponent={isFetchingMore ? <LoaderOverlay visible /> : null}
