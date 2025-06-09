@@ -3,12 +3,12 @@
 import React, { useEffect } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export const CHANGELOG_VERSION = '1.2.9';
+export const CHANGELOG_VERSION = '1.3.0';
 export const CHANGELOG_KEY = `changelog_seen_${CHANGELOG_VERSION}`;
 const autoDismissDelay = 7000;
 
 const CHANGELOG_CONTENT = [
-  'fixed products not showing',
+  'Added chat feature',
   'New UI polish',
   'Some Bug fixes',
 ];
