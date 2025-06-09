@@ -126,4 +126,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default chatlist;
+export default ChatListScreen;
