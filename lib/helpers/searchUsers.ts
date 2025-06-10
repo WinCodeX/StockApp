@@ -9,7 +9,14 @@ export const searchUsers = async (query: string) => {
       },
     });
 
-    return response.data;
+    const users = response.data.data.map((user: any) => ({
+      id: user.id,
+      username: user.attributes.username,
+      email: user.attributes.email,
+      avatar_url: user.attributes.avatar_url,
+    }));
+
+    return users;
   } catch (error) {
     console.error('Failed to search users:', error);
     return [];
