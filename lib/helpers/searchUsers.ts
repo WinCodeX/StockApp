@@ -2,7 +2,7 @@ import api from '../api'; // adjust path if needed
 
 export const searchUsers = async (query: string) => {
   try {
-    const response = await api.get('/users/search', {
+    const response = await api.get('api/v1/users/search', {
       params: { q: query },
       headers: {
         Accept: 'application/json',
