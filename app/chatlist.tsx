@@ -64,14 +64,14 @@ const ChatListScreen = () => {
       {/* Custom Header */}
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary || '#bd93f9'} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Conversations</Text>
       </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary || '#bd93f9'} />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
       ) : error ? (
@@ -81,7 +81,7 @@ const ChatListScreen = () => {
           data={conversations}
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 120 }}
         />
       )}
 
@@ -98,14 +98,15 @@ const ChatListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background || '#1a1a1a',
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: colors.background,
+    paddingTop: 14,
+    paddingBottom: 10,
+    backgroundColor: colors.background || '#1a1a1a',
     borderBottomWidth: 1,
     borderBottomColor: colors.border || '#333',
   },
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: colors.primary,
+    color: colors.primary || '#bd93f9',
   },
   loadingContainer: {
     flex: 1,
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 8,
-    color: colors.text,
+    color: colors.text || '#fff',
   },
   errorText: {
     color: '#ff6b6b',
@@ -149,7 +150,7 @@ const styles = StyleSheet.create({
   conversationName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.text,
+    color: colors.text || '#fff',
     marginBottom: 4,
   },
   lastMessage: {
@@ -163,9 +164,9 @@ const styles = StyleSheet.create({
   },
   newConversationButton: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 90, // 🟣 FAB now floats above bottom tab bar
     right: 20,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary || '#bd93f9',
     borderRadius: 28,
     width: 56,
     height: 56,
