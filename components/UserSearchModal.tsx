@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../theme/colors';
@@ -15,8 +16,9 @@ import { searchUsers } from '../lib/helpers/searchUsers';
 
 interface User {
   id: number;
-  name: string;
+  username: string;
   email: string;
+  avatar_url: string | null;
 }
 
 interface Props {
@@ -63,7 +65,7 @@ const UserSearchModal: React.FC<Props> = ({ visible, onClose, onSelectUser }) =>
 
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by name or email..."
+            placeholder="Search by username or email..."
             placeholderTextColor="#999"
             value={query}
             onChangeText={setQuery}
@@ -77,7 +79,7 @@ const UserSearchModal: React.FC<Props> = ({ visible, onClose, onSelectUser }) =>
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={styles.userItem}
+                  style={styles.userRow}
                   onPress={() => {
                     onSelectUser(item);
                     setQuery('');
@@ -85,8 +87,18 @@ const UserSearchModal: React.FC<Props> = ({ visible, onClose, onSelectUser }) =>
                     onClose();
                   }}
                 >
-                  <Text style={styles.userName}>{item.name}</Text>
-                  <Text style={styles.userEmail}>{item.email}</Text>
+                  <Image
+                    source={
+                      item.avatar_url
+                        ? { uri: item.avatar_url }
+                        : require('../assets/default_avatar.png')
+                    }
+                    style={styles.avatar}
+                  />
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>{item.username}</Text>
+                    <Text style={styles.userEmail}>{item.email}</Text>
+                  </View>
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
@@ -134,18 +146,30 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 12,
   },
-  userItem: {
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
     borderBottomColor: '#444',
     borderBottomWidth: 1,
+  },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#555',
+    marginRight: 12,
+  },
+  userInfo: {
+    flex: 1,
   },
   userName: {
     fontSize: 16,
     color: '#fff',
   },
   userEmail: {
-    fontSize: 14,
-    color: '#ccc',
+    fontSize: 13,
+    color: '#aaa',
   },
   emptyText: {
     color: '#aaa',
