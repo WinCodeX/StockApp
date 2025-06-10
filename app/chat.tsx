@@ -66,17 +66,19 @@ const ConversationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Custom Compact Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backIcon}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chat</Text>
       </View>
 
+      {/* Chat Messages */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
         <FlatList
           data={[...messages].reverse()}
@@ -85,16 +87,33 @@ const ConversationScreen = () => {
           contentContainerStyle={styles.messagesContainer}
         />
 
+        {/* WhatsApp-style Input */}
         <View style={styles.inputContainer}>
-          <TextInput
-            value={newMessage}
-            onChangeText={setNewMessage}
-            placeholder="Type a message..."
-            placeholderTextColor="#444"
-            style={styles.input}
-          />
-          <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
-            <MaterialCommunityIcons name="send" size={24} color="#fff" />
+          <View style={styles.textBox}>
+            <TouchableOpacity style={styles.iconButton}>
+              <MaterialCommunityIcons name="emoticon-outline" size={24} color="#bbb" />
+            </TouchableOpacity>
+            <TextInput
+              value={newMessage}
+              onChangeText={setNewMessage}
+              placeholder="Message"
+              placeholderTextColor="#bbb"
+              style={styles.textInput}
+            />
+            <TouchableOpacity style={styles.iconButton}>
+              <MaterialCommunityIcons name="paperclip" size={22} color="#bbb" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton}>
+              <MaterialCommunityIcons name="camera-outline" size={22} color="#bbb" />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            onPress={handleSendMessage}
+            style={styles.sendButton}
+            disabled={newMessage.trim() === ''}
+          >
+            <MaterialCommunityIcons name="send" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -110,16 +129,16 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     backgroundColor: '#1A1A1D',
-    borderBottomColor: '#333',
     borderBottomWidth: 1,
-    zIndex: 2,
+    borderBottomColor: '#333',
+  },
+  backIcon: {
+    marginRight: 10,
   },
   headerTitle: {
-    marginLeft: 12,
     fontSize: 20,
     fontWeight: 'bold',
     color: '#bd93f9',
@@ -155,7 +174,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   timestamp: {
-    color: '#ddd',
+    color: '#ccc',
     fontSize: 12,
     textAlign: 'right',
     marginTop: 5,
@@ -163,26 +182,37 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: '#1A1A1D',
     borderTopWidth: 1,
     borderTopColor: '#333',
-    backgroundColor: '#282a36',
   },
-  input: {
+  textBox: {
     flex: 1,
-    backgroundColor: '#f8f8f2',
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2a2a2a',
+    borderRadius: 30,
+    paddingHorizontal: 10,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 6,
+  },
+  textInput: {
+    flex: 1,
     fontSize: 16,
-    marginRight: 10,
-    color: '#000',
+    color: '#fff',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  iconButton: {
+    padding: 6,
+    marginHorizontal: 2,
   },
   sendButton: {
-    backgroundColor: '#25d366',
-    padding: 10,
-    borderRadius: 25,
+    backgroundColor: '#bd93f9',
+    padding: 12,
+    marginLeft: 6,
+    borderRadius: 28,
   },
 });
 
