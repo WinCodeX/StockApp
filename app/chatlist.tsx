@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { getConversations } from '../lib/helpers/getConversations'; // Assume this function handles fetching the conversations from the backend
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getConversations } from '../lib/helpers/getConversations';
 import colors from '../theme/colors';
 
 const ChatListScreen = () => {
@@ -11,17 +19,16 @@ const ChatListScreen = () => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
-    // Fetch conversations on initial load
     fetchConversations();
   }, []);
-  
+
   const fetchConversations = async () => {
     setLoading(true);
     try {
       const data = await getConversations();
-      setConversations(data); // Set the conversations list in state
+      setConversations(data);
     } catch (err) {
       setError('Failed to load conversations');
       Toast.show({
@@ -53,76 +60,122 @@ const ChatListScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Conversations</Text>
+    <SafeAreaView style={styles.container}>
+      {/* Custom Header */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Conversations</Text>
+      </View>
+
       {loading ? (
-        <Text>Loading conversations...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
       ) : error ? (
-        <Text>{error}</Text>
+        <Text style={styles.errorText}>{error}</Text>
       ) : (
         <FlatList
           data={conversations}
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
+
       <TouchableOpacity
         style={styles.newConversationButton}
         onPress={() => router.push('/new-conversation')}
       >
         <MaterialCommunityIcons name="message-plus" size={24} color="white" />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: colors.background,
   },
-  header: {
-    fontSize: 24,
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border || '#333',
+  },
+  backButton: {
+    marginRight: 10,
+  },
+  headerTitle: {
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 10,
     color: colors.primary,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 8,
+    color: colors.text,
+  },
+  errorText: {
+    color: '#ff6b6b',
+    padding: 16,
+    textAlign: 'center',
   },
   conversationItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 12,
+    padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#333',
+    backgroundColor: colors.cardBackground || '#2a2a3d',
+    marginHorizontal: 8,
+    marginVertical: 4,
+    borderRadius: 8,
   },
   conversationDetails: {
     flex: 1,
+    marginRight: 12,
   },
   conversationName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: colors.text,
+    marginBottom: 4,
   },
   lastMessage: {
-    color: '#888',
+    color: colors.textSecondary || '#bbb',
     fontSize: 14,
   },
   timestamp: {
-    color: '#bbb',
+    color: colors.textMuted || '#999',
     fontSize: 12,
     alignSelf: 'center',
   },
   newConversationButton: {
     position: 'absolute',
-    bottom: 16,
-    right: 16,
+    bottom: 20,
+    right: 20,
     backgroundColor: colors.primary,
-    borderRadius: 50,
-    padding: 16,
+    borderRadius: 28,
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
 });
 
