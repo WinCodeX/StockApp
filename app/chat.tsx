@@ -1,44 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { getMessages } from '../lib/helpers/getMessages'; // Importing getMessages from your helpers
-import { sendMessage } from '../lib/helpers/sendMessage'; // Importing sendMessage from your helpers
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
-const ConversationScreen = ({ route }) => {
-  const { chatId } = route.params; // Get the conversation ID from route params
+import { getMessages } from '../lib/helpers/getMessages';
+import { sendMessage } from '../lib/helpers/sendMessage';
+
+const ConversationScreen = () => {
+  const router = useRouter();
+  const { chatId } = useLocalSearchParams();
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
-  // Fetch messages when the screen is mounted
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const data = await getMessages(chatId); // Fetch messages for the current chat
+        const data = await getMessages(chatId);
         setMessages(data);
       } catch (error) {
         console.error('Error fetching messages:', error);
       }
     };
+
     fetchMessages();
   }, [chatId]);
 
-  // Handle sending a new message
   const handleSendMessage = async () => {
-    if (newMessage.trim() === '') return; // Don't send empty messages
+    if (newMessage.trim() === '') return;
 
     try {
-      await sendMessage(chatId, newMessage); // Send the new message
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { text: newMessage, sender: 'me', timestamp: new Date().toISOString() },
+      await sendMessage(chatId, newMessage);
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: newMessage,
+          sender: 'me',
+          timestamp: new Date().toISOString(),
+        },
       ]);
-      setNewMessage(''); // Clear the input field
+      setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
-  // Render each message in the list
   const renderItem = ({ item }) => (
     <View style={item.sender === 'me' ? styles.myMessage : styles.otherMessage}>
       <Text style={styles.messageText}>{item.text}</Text>
@@ -47,19 +62,29 @@ const ConversationScreen = ({ route }) => {
   );
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* Custom Back Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Chat</Text>
+      </View>
+
       <FlatList
         data={messages}
         renderItem={renderItem}
         keyExtractor={(item, index) => index.toString()}
         inverted
-        style={styles.messagesContainer}
+        contentContainerStyle={styles.messagesContainer}
       />
+
       <View style={styles.inputContainer}>
         <TextInput
           value={newMessage}
           onChangeText={setNewMessage}
           placeholder="Type a message..."
+          placeholderTextColor="#444"
           style={styles.input}
         />
         <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
@@ -73,15 +98,29 @@ const ConversationScreen = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A1A1D', // Dracula theme background color
+    backgroundColor: '#1A1A1D',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+    backgroundColor: '#1A1A1D',
+  },
+  headerTitle: {
+    marginLeft: 12,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#bd93f9',
   },
   messagesContainer: {
-    flex: 1,
     padding: 16,
+    paddingBottom: 80,
   },
   myMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#50fa7b', // Dracula theme green for sent messages
+    backgroundColor: '#50fa7b',
     padding: 10,
     marginBottom: 10,
     borderRadius: 20,
@@ -89,14 +128,14 @@ const styles = StyleSheet.create({
   },
   otherMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: '#44475a', // Dracula theme grey for received messages
+    backgroundColor: '#44475a',
     padding: 10,
     marginBottom: 10,
     borderRadius: 20,
     maxWidth: '70%',
   },
   messageText: {
-    color: '#fff', // White text
+    color: '#fff',
     fontSize: 16,
   },
   timestamp: {
@@ -111,7 +150,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderTopWidth: 1,
     borderTopColor: '#ccc',
-    backgroundColor: '#282a36', // Dracula theme background for input area
+    backgroundColor: '#282a36',
   },
   input: {
     flex: 1,
@@ -119,13 +158,13 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     padding: 10,
     marginRight: 10,
-    backgroundColor: '#f8f8f2', // Dracula theme input background
+    backgroundColor: '#f8f8f2',
     borderColor: '#ccc',
-    color: '#000', // Text color inside input
+    color: '#000',
   },
   sendButton: {
     padding: 10,
-    backgroundColor: '#50fa7b', // Dracula theme green for send button
+    backgroundColor: '#50fa7b',
     borderRadius: 25,
   },
 });
