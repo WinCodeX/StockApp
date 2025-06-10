@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { getConversations } from '../lib/helpers/getConversations';
 import colors from '../theme/colors';
 import UserSearchModal from '../components/UserSearchModal';
@@ -57,7 +58,11 @@ const ChatListScreen = () => {
           {item.lastMessage?.content || 'No messages yet'}
         </Text>
       </View>
-      <Text style={styles.timestamp}>{item.lastMessage?.createdAt}</Text>
+      <Text style={styles.timestamp}>
+        {item.lastMessage?.createdAt
+          ? new Date(item.lastMessage.createdAt).toLocaleTimeString()
+          : ''}
+      </Text>
     </TouchableOpacity>
   );
 
@@ -65,8 +70,8 @@ const ChatListScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Custom Header */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
+        <TouchableOpacity
+          onPress={() => router.back()}
           style={styles.backButton}
         >
           <MaterialCommunityIcons
@@ -80,9 +85,9 @@ const ChatListScreen = () => {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator 
-            size="large" 
-            color={colors.primary || '#bd93f9'} 
+          <ActivityIndicator
+            size="large"
+            color={colors.primary || '#bd93f9'}
           />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
@@ -102,14 +107,11 @@ const ChatListScreen = () => {
         style={styles.newConversationButton}
         onPress={() => setShowSearchModal(true)}
       >
-        <MaterialCommunityIcons 
-          name="message-plus" 
-          size={24} 
-          color="white" 
-        />
+        <MaterialCommunityIcons name="message-plus" size={24} color="white" />
       </TouchableOpacity>
 
-      <SearchUserModal
+      {/* Fixed component usage */}
+      <UserSearchModal
         visible={showSearchModal}
         onClose={() => setShowSearchModal(false)}
         onUserSelect={(user) => {
