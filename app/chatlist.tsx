@@ -13,12 +13,14 @@ import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getConversations } from '../lib/helpers/getConversations';
 import colors from '../theme/colors';
+import SearchUserModal from '../components/SearchUserModal';
 
 const ChatListScreen = () => {
   const router = useRouter();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   useEffect(() => {
     fetchConversations();
@@ -40,7 +42,7 @@ const ChatListScreen = () => {
     }
   };
 
-  const handleConversationPress = (conversationId: number) => {
+  const handleConversationPress = (conversationId) => {
     router.push(`/conversations/${conversationId}`);
   };
 
@@ -63,15 +65,25 @@ const ChatListScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Custom Header */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary || '#bd93f9'} />
+        <TouchableOpacity 
+          onPress={() => router.back()} 
+          style={styles.backButton}
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color={colors.primary || '#bd93f9'}
+          />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Conversations</Text>
       </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary || '#bd93f9'} />
+          <ActivityIndicator 
+            size="large" 
+            color={colors.primary || '#bd93f9'} 
+          />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
       ) : error ? (
@@ -85,13 +97,26 @@ const ChatListScreen = () => {
         />
       )}
 
-      {/* 🟣 FAB to start new chat */}
+      {/* FAB to open user search */}
       <TouchableOpacity
         style={styles.newConversationButton}
-        onPress={() => router.push('/chat')}
+        onPress={() => setShowSearchModal(true)}
       >
-        <MaterialCommunityIcons name="message-plus" size={24} color="white" />
+        <MaterialCommunityIcons 
+          name="message-plus" 
+          size={24} 
+          color="white" 
+        />
       </TouchableOpacity>
+
+      <SearchUserModal
+        visible={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        onUserSelect={(user) => {
+          setShowSearchModal(false);
+          router.push(`/chat?chatId=${user.id}`);
+        }}
+      />
     </SafeAreaView>
   );
 };
