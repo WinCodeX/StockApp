@@ -40,7 +40,7 @@ const ChatListScreen = () => {
     }
   };
 
-  const handleConversationPress = (conversationId) => {
+  const handleConversationPress = (conversationId: number) => {
     router.push(`/conversations/${conversationId}`);
   };
 
@@ -85,9 +85,10 @@ const ChatListScreen = () => {
         />
       )}
 
+      {/* 🟣 FAB to start new chat */}
       <TouchableOpacity
         style={styles.newConversationButton}
-        onPress={() => router.push('/new-conversation')}
+        onPress={() => router.push('/chat')}
       >
         <MaterialCommunityIcons name="message-plus" size={24} color="white" />
       </TouchableOpacity>
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
   },
   newConversationButton: {
     position: 'absolute',
-    bottom: 90, // 🟣 FAB now floats above bottom tab bar
+    bottom: 90,
     right: 20,
     backgroundColor: colors.primary || '#bd93f9',
     borderRadius: 28,
