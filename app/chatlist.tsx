@@ -13,7 +13,7 @@ import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getConversations } from '../lib/helpers/getConversations';
 import colors from '../theme/colors';
-import SearchUserModal from '../components/SearchUserModal';
+import UserSearchModal from '../components/UserSearchModal';
 
 const ChatListScreen = () => {
   const router = useRouter();
