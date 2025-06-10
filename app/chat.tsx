@@ -8,20 +8,22 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
+  Animated,
+  Image,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getMessages } from '../lib/helpers/getMessages';
 import { sendMessage } from '../lib/helpers/sendMessage';
 
 const ConversationScreen = () => {
   const router = useRouter();
   const { chatId } = useLocalSearchParams();
-
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [typing, setTyping] = useState(false);
+  const typingAnim = new Animated.Value(0);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -32,13 +34,13 @@ const ConversationScreen = () => {
         console.error('Error fetching messages:', error);
       }
     };
-
     fetchMessages();
   }, [chatId]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() === '') return;
 
+    setTyping(false);
     try {
       await sendMessage(chatId, newMessage);
       setMessages((prev) => [
@@ -55,6 +57,17 @@ const ConversationScreen = () => {
     }
   };
 
+  const handleTyping = (text) => {
+    setNewMessage(text);
+    setTyping(true);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(typingAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(typingAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+      ]),
+    ).start();
+  };
+
   const renderItem = ({ item }) => (
     <View style={item.sender === 'me' ? styles.myMessage : styles.otherMessage}>
       <Text style={styles.messageText}>{item.text}</Text>
@@ -66,19 +79,23 @@ const ConversationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Custom Compact Header */}
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backIcon}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chat</Text>
+        <Image
+          source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
+          style={styles.avatar}
+        />
+        <Text style={styles.headerTitle}>Receiver Name</Text>
       </View>
 
-      {/* Chat Messages */}
+      {/* Chat Area */}
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.chatContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+        keyboardVerticalOffset={90}
       >
         <FlatList
           data={[...messages].reverse()}
@@ -87,33 +104,30 @@ const ConversationScreen = () => {
           contentContainerStyle={styles.messagesContainer}
         />
 
-        {/* WhatsApp-style Input */}
-        <View style={styles.inputContainer}>
-          <View style={styles.textBox}>
-            <TouchableOpacity style={styles.iconButton}>
-              <MaterialCommunityIcons name="emoticon-outline" size={24} color="#bbb" />
-            </TouchableOpacity>
+        {typing && (
+          <Animated.Text
+            style={[styles.typingIndicator, { opacity: typingAnim }]}
+          >
+            Typing...
+          </Animated.Text>
+        )}
+
+        {/* Input */}
+        <View style={styles.inputWrapper}>
+          <View style={styles.inputContainer}>
+            <MaterialCommunityIcons name="emoticon-outline" size={24} color="#aaa" />
             <TextInput
               value={newMessage}
-              onChangeText={setNewMessage}
+              onChangeText={handleTyping}
               placeholder="Message"
-              placeholderTextColor="#bbb"
-              style={styles.textInput}
+              placeholderTextColor="#999"
+              style={styles.input}
             />
-            <TouchableOpacity style={styles.iconButton}>
-              <MaterialCommunityIcons name="paperclip" size={22} color="#bbb" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <MaterialCommunityIcons name="camera-outline" size={22} color="#bbb" />
-            </TouchableOpacity>
+            <MaterialCommunityIcons name="paperclip" size={24} color="#aaa" style={styles.icon} />
+            <MaterialCommunityIcons name="camera" size={24} color="#aaa" style={styles.icon} />
           </View>
-
-          <TouchableOpacity
-            onPress={handleSendMessage}
-            style={styles.sendButton}
-            disabled={newMessage.trim() === ''}
-          >
-            <MaterialCommunityIcons name="send" size={22} color="#fff" />
+          <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
+            <MaterialCommunityIcons name="send" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -129,23 +143,32 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
     paddingVertical: 12,
+    paddingHorizontal: 16,
     backgroundColor: '#1A1A1D',
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
-  backIcon: {
+  backButton: {
+    marginRight: 10,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     marginRight: 10,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#bd93f9',
   },
+  chatContainer: {
+    flex: 1,
+  },
   messagesContainer: {
-    padding: 12,
-    paddingBottom: 90,
+    padding: 16,
+    paddingBottom: 80,
   },
   myMessage: {
     alignSelf: 'flex-end',
@@ -174,45 +197,48 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   timestamp: {
-    color: '#ccc',
+    color: '#bbb',
     fontSize: 12,
     textAlign: 'right',
     marginTop: 5,
   },
-  inputContainer: {
+  typingIndicator: {
+    marginLeft: 16,
+    marginBottom: 8,
+    color: '#aaa',
+    fontStyle: 'italic',
+  },
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingBottom: 10,
+    paddingTop: 6,
     backgroundColor: '#1A1A1D',
-    borderTopWidth: 1,
-    borderTopColor: '#333',
   },
-  textBox: {
-    flex: 1,
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#2a2a3d',
+    flex: 1,
     borderRadius: 30,
-    paddingHorizontal: 10,
-    paddingVertical: Platform.OS === 'ios' ? 10 : 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
-  textInput: {
+  input: {
     flex: 1,
     fontSize: 16,
     color: '#fff',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
-  iconButton: {
-    padding: 6,
-    marginHorizontal: 2,
+  icon: {
+    marginLeft: 6,
   },
   sendButton: {
+    marginLeft: 8,
     backgroundColor: '#bd93f9',
-    padding: 12,
-    marginLeft: 6,
     borderRadius: 28,
+    padding: 12,
   },
 });
 
