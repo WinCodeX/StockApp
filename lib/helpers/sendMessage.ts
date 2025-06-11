@@ -14,12 +14,17 @@ const sendMessage = async (conversationId: string, content: string) => {
       {
         message: { content },
       },
-      { headers: { Authorization: `Bearer ${token}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json', // ✅ Ensures Rails processes this as JSON
+        },
+      }
     );
 
     return response.data;
-  } catch (error) {
-    console.error('Error sending message:', error.message);
+  } catch (error: any) {
+    console.error('Error sending message:', error?.message || error);
     throw error;
   }
 };
