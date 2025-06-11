@@ -55,7 +55,14 @@ const UserSearchModal: React.FC<Props> = ({ visible, onClose }) => {
   }, [query]);
 
   const handleSelectUser = (user: User) => {
-    router.push({ pathname: '/chat', params: { userId: user.id.toString() } });
+    router.push({
+      pathname: '/chat',
+      params: {
+        userId: user.id.toString(),
+        username: user.username,
+        avatarUrl: user.avatar_url || '',
+      },
+    });
     setQuery('');
     setUsers([]);
     onClose();
