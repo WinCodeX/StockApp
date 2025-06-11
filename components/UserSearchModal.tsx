@@ -11,7 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router'; // 🔥 Import router for navigation
+import { useRouter } from 'expo-router';
 import colors from '../theme/colors';
 import { searchUsers } from '../lib/helpers/searchUsers';
 
@@ -25,7 +25,7 @@ interface User {
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onSelectUser?: (user: User) => void; // Optional now, used internally instead
+  onSelectUser?: (user: User) => void;
 }
 
 const UserSearchModal: React.FC<Props> = ({ visible, onClose }) => {
@@ -55,8 +55,7 @@ const UserSearchModal: React.FC<Props> = ({ visible, onClose }) => {
   }, [query]);
 
   const handleSelectUser = (user: User) => {
-    // 🧠 Navigate to the conversation screen directly
-    router.push(`/conversations/${user.id}`);
+    router.push({ pathname: '/chat', params: { userId: user.id.toString() } });
     setQuery('');
     setUsers([]);
     onClose();
