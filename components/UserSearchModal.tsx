@@ -58,11 +58,12 @@ const UserSearchModal: React.FC<Props> = ({ visible, onClose }) => {
     router.push({
       pathname: '/chat',
       params: {
-        userId: user.id.toString(),
+        conversationId: user.id.toString(), // ✅ Changed from userId
         username: user.username,
         avatarUrl: user.avatar_url || '',
       },
     });
+
     setQuery('');
     setUsers([]);
     onClose();
