@@ -19,7 +19,12 @@ import { sendMessage } from '../lib/helpers/sendMessage';
 
 const ConversationScreen = () => {
   const router = useRouter();
-  const { chatId } = useLocalSearchParams();
+  const { userId, username, avatarUrl } = useLocalSearchParams<{
+    userId: string;
+    username: string;
+    avatarUrl: string;
+  }>();
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [typing, setTyping] = useState(false);
@@ -28,21 +33,21 @@ const ConversationScreen = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const data = await getMessages(chatId);
+        const data = await getMessages(userId);
         setMessages(data);
       } catch (error) {
         console.error('Error fetching messages:', error);
       }
     };
-    fetchMessages();
-  }, [chatId]);
+    if (userId) fetchMessages();
+  }, [userId]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() === '') return;
 
     setTyping(false);
     try {
-      await sendMessage(chatId, newMessage);
+      await sendMessage(userId, newMessage);
       setMessages((prev) => [
         ...prev,
         {
@@ -57,7 +62,7 @@ const ConversationScreen = () => {
     }
   };
 
-  const handleTyping = (text) => {
+  const handleTyping = (text: string) => {
     setNewMessage(text);
     setTyping(true);
     Animated.loop(
@@ -85,10 +90,14 @@ const ConversationScreen = () => {
           <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
         </TouchableOpacity>
         <Image
-          source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
+          source={
+            avatarUrl
+              ? { uri: avatarUrl.toString() }
+              : require('../assets/images/avatar_placeholder.png')
+          }
           style={styles.avatar}
         />
-        <Text style={styles.headerTitle}>Receiver Name</Text>
+        <Text style={styles.headerTitle}>{username}</Text>
       </View>
 
       {/* Chat Area */}
@@ -134,112 +143,5 @@ const ConversationScreen = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1A1A1D',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#1A1A1D',
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  backButton: {
-    marginRight: 10,
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 10,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#bd93f9',
-  },
-  chatContainer: {
-    flex: 1,
-  },
-  messagesContainer: {
-    padding: 16,
-    paddingBottom: 80,
-  },
-  myMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#25d366',
-    padding: 10,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 6,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    marginBottom: 10,
-    maxWidth: '75%',
-  },
-  otherMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#2a2a3d',
-    padding: 10,
-    borderTopRightRadius: 18,
-    borderTopLeftRadius: 6,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    marginBottom: 10,
-    maxWidth: '75%',
-  },
-  messageText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-  timestamp: {
-    color: '#bbb',
-    fontSize: 12,
-    textAlign: 'right',
-    marginTop: 5,
-  },
-  typingIndicator: {
-    marginLeft: 16,
-    marginBottom: 8,
-    color: '#aaa',
-    fontStyle: 'italic',
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingBottom: 10,
-    paddingTop: 6,
-    backgroundColor: '#1A1A1D',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2a2a3d',
-    flex: 1,
-    borderRadius: 30,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#fff',
-    paddingHorizontal: 8,
-  },
-  icon: {
-    marginLeft: 6,
-  },
-  sendButton: {
-    marginLeft: 8,
-    backgroundColor: '#bd93f9',
-    borderRadius: 28,
-    padding: 12,
-  },
-});
 
 export default ConversationScreen;
