@@ -8,11 +8,11 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Animated,
+  Keyboard,
+  TouchableWithoutFeedback,
   Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getMessages } from '../lib/helpers/getMessages';
 import { sendMessage } from '../lib/helpers/sendMessage';
@@ -56,8 +56,8 @@ const ConversationScreen = () => {
       };
       setMessages((prev) => [...prev, newEntry]);
       setNewMessage('');
-      setTimeout(() => 
-        flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 
+      setTimeout(() =>
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: true }),
         100
       );
     } catch (error) {
@@ -68,7 +68,7 @@ const ConversationScreen = () => {
   const handleTyping = async (text: string) => {
     setNewMessage(text);
     try {
-      await sendTypingStatus(userId);
+      await sendTypingStatus(userId); // could debounce here for efficiency
     } catch (error) {
       console.error('Failed to send typing status:', error);
     }
@@ -80,102 +80,74 @@ const ConversationScreen = () => {
       <Text style={styles.timestamp}>
         {new Date(item.timestamp).toLocaleTimeString([], {
           hour: '2-digit',
-          minute: '2-digit'
+          minute: '2-digit',
         })}
       </Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
-          style={styles.backButton}
-        >
-          <MaterialCommunityIcons 
-            name="arrow-left" 
-            size={24} 
-            color="#bd93f9" 
-          />
-        </TouchableOpacity>
-        
-        <Image
-          source={
-            avatarUrl
-              ? { uri: avatarUrl.toString() }
-              : require('../assets/images/avatar_placeholder.png')
-          }
-          style={styles.avatar}
-        />
-        
-        <Text style={styles.headerTitle}>
-          {username || 'User'}
-        </Text>
-      </View>
-
-      {/* Chat Area */}
-      <KeyboardAvoidingView
-        style={styles.chatContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={90}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={[...messages].reverse()}
-          renderItem={renderItem}
-          keyExtractor={(item) => 
-            item.id?.toString() || `${item.sender}-${item.timestamp}`
-          }
-          contentContainerStyle={styles.messagesContainer}
-        />
-
-        {/* Input */}
-        <View style={styles.inputWrapper}>
-          <View style={styles.inputContainer}>
-            <MaterialCommunityIcons 
-              name="emoticon-outline" 
-              size={24} 
-              color="#aaa" 
-            />
-            
-            <TextInput
-              value={newMessage}
-              onChangeText={handleTyping}
-              placeholder="Message"
-              placeholderTextColor="#999"
-              style={styles.input}
-            />
-            
-            <MaterialCommunityIcons 
-              name="paperclip" 
-              size={24} 
-              color="#aaa" 
-              style={styles.icon} 
-            />
-            
-            <MaterialCommunityIcons 
-              name="camera" 
-              size={24} 
-              color="#aaa" 
-              style={styles.icon} 
-            />
-          </View>
-          
-          <TouchableOpacity 
-            onPress={handleSendMessage} 
-            style={styles.sendButton}
-          >
-            <MaterialCommunityIcons 
-              name="send" 
-              size={24} 
-              color="#fff" 
-            />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
           </TouchableOpacity>
+
+          <Image
+            source={
+              avatarUrl
+                ? { uri: avatarUrl.toString() }
+                : require('../assets/images/avatar_placeholder.png')
+            }
+            style={styles.avatar}
+          />
+
+          <Text style={styles.headerTitle}>{username || 'User'}</Text>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+        {/* Chat Area */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.chatContainer}
+          keyboardVerticalOffset={90}
+        >
+          <FlatList
+            ref={flatListRef}
+            data={[...messages].reverse()}
+            renderItem={renderItem}
+            keyExtractor={(item) =>
+              item.id?.toString() || `${item.sender}-${item.timestamp}`
+            }
+            contentContainerStyle={styles.messagesContainer}
+            inverted
+          />
+
+          {/* Input */}
+          <View style={styles.inputWrapper}>
+            <View style={styles.inputContainer}>
+              <MaterialCommunityIcons name="emoticon-outline" size={24} color="#aaa" />
+
+              <TextInput
+                value={newMessage}
+                onChangeText={handleTyping}
+                placeholder="Message"
+                placeholderTextColor="#999"
+                style={styles.input}
+              />
+
+              <MaterialCommunityIcons name="paperclip" size={24} color="#aaa" style={styles.icon} />
+              <MaterialCommunityIcons name="camera" size={24} color="#aaa" style={styles.icon} />
+            </View>
+
+            <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
+              <MaterialCommunityIcons name="send" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -212,7 +184,6 @@ const styles = StyleSheet.create({
   },
   messagesContainer: {
     padding: 16,
-    paddingBottom: 80,
   },
   myMessage: {
     alignSelf: 'flex-end',
@@ -246,17 +217,11 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 5,
   },
-  typingIndicator: {
-    marginLeft: 16,
-    marginBottom: 8,
-    color: '#aaa',
-    fontStyle: 'italic',
-  },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 14,
     paddingTop: 6,
     backgroundColor: '#1A1A1D',
   },
