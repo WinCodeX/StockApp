@@ -91,7 +91,7 @@ const UserSearchModal: React.FC<Props> = ({ visible, onClose, onSelectUser }) =>
                     source={
                       item.avatar_url
                         ? { uri: item.avatar_url }
-                        : require('../assets/avatar_placeholder.png')
+                        : require('../assets/images/avatar_placeholder.png')
                     }
                     style={styles.avatar}
                   />
