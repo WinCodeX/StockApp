@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router'; // 🔥 Import router for navigation
 import colors from '../theme/colors';
 import { searchUsers } from '../lib/helpers/searchUsers';
 
@@ -24,10 +25,11 @@ interface User {
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onSelectUser: (user: User) => void;
+  onSelectUser?: (user: User) => void; // Optional now, used internally instead
 }
 
-const UserSearchModal: React.FC<Props> = ({ visible, onClose, onSelectUser }) => {
+const UserSearchModal: React.FC<Props> = ({ visible, onClose }) => {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,6 +53,14 @@ const UserSearchModal: React.FC<Props> = ({ visible, onClose, onSelectUser }) =>
     }, 400);
     return () => clearTimeout(delaySearch);
   }, [query]);
+
+  const handleSelectUser = (user: User) => {
+    // 🧠 Navigate to the conversation screen directly
+    router.push(`/conversations/${user.id}`);
+    setQuery('');
+    setUsers([]);
+    onClose();
+  };
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -78,15 +88,7 @@ const UserSearchModal: React.FC<Props> = ({ visible, onClose, onSelectUser }) =>
               data={users}
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.userRow}
-                  onPress={() => {
-                    onSelectUser(item);
-                    setQuery('');
-                    setUsers([]);
-                    onClose();
-                  }}
-                >
+                <TouchableOpacity style={styles.userRow} onPress={() => handleSelectUser(item)}>
                   <Image
                     source={
                       item.avatar_url
