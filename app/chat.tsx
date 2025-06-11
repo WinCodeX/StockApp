@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -25,10 +25,11 @@ const ConversationScreen = () => {
     avatarUrl: string;
   }>();
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [typing, setTyping] = useState(false);
-  const typingAnim = new Animated.Value(0);
+  const typingAnim = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -39,8 +40,26 @@ const ConversationScreen = () => {
         console.error('Error fetching messages:', error);
       }
     };
+
     if (userId) fetchMessages();
   }, [userId]);
+
+  useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+    if (typing) {
+      animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(typingAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+          Animated.timing(typingAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+        ])
+      );
+      animation.start();
+    }
+
+    return () => {
+      if (animation) animation.stop();
+    };
+  }, [typing]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() === '') return;
@@ -48,15 +67,15 @@ const ConversationScreen = () => {
     setTyping(false);
     try {
       await sendMessage(userId, newMessage);
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: newMessage,
-          sender: 'me',
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      const newEntry = {
+        id: Date.now(), // Temporary ID
+        text: newMessage,
+        sender: 'me',
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, newEntry]);
       setNewMessage('');
+      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -65,12 +84,6 @@ const ConversationScreen = () => {
   const handleTyping = (text: string) => {
     setNewMessage(text);
     setTyping(true);
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(typingAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.timing(typingAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
-      ]),
-    ).start();
   };
 
   const renderItem = ({ item }) => (
@@ -97,7 +110,7 @@ const ConversationScreen = () => {
           }
           style={styles.avatar}
         />
-        <Text style={styles.headerTitle}>{username}</Text>
+        <Text style={styles.headerTitle}>{username || 'User'}</Text>
       </View>
 
       {/* Chat Area */}
@@ -107,9 +120,10 @@ const ConversationScreen = () => {
         keyboardVerticalOffset={90}
       >
         <FlatList
+          ref={flatListRef}
           data={[...messages].reverse()}
           renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(item) => item.id?.toString() || `${item.sender}-${item.timestamp}`}
           contentContainerStyle={styles.messagesContainer}
         />
 
@@ -143,5 +157,112 @@ const ConversationScreen = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#1A1A1D',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#1A1A1D',
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  backButton: {
+    marginRight: 10,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#bd93f9',
+  },
+  chatContainer: {
+    flex: 1,
+  },
+  messagesContainer: {
+    padding: 16,
+    paddingBottom: 80,
+  },
+  myMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#25d366',
+    padding: 10,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 6,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    marginBottom: 10,
+    maxWidth: '75%',
+  },
+  otherMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#2a2a3d',
+    padding: 10,
+    borderTopRightRadius: 18,
+    borderTopLeftRadius: 6,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    marginBottom: 10,
+    maxWidth: '75%',
+  },
+  messageText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  timestamp: {
+    color: '#bbb',
+    fontSize: 12,
+    textAlign: 'right',
+    marginTop: 5,
+  },
+  typingIndicator: {
+    marginLeft: 16,
+    marginBottom: 8,
+    color: '#aaa',
+    fontStyle: 'italic',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingBottom: 10,
+    paddingTop: 6,
+    backgroundColor: '#1A1A1D',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2a2a3d',
+    flex: 1,
+    borderRadius: 30,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#fff',
+    paddingHorizontal: 8,
+  },
+  icon: {
+    marginLeft: 6,
+  },
+  sendButton: {
+    marginLeft: 8,
+    backgroundColor: '#bd93f9',
+    borderRadius: 28,
+    padding: 12,
+  },
+});
 
 export default ConversationScreen;
