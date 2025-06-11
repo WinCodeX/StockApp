@@ -21,9 +21,8 @@ import { sendTypingStatus } from '../lib/helpers/sendTypingStatus';
 
 const ConversationScreen = () => {
   const router = useRouter();
-
-  const { conversationId, username, avatarUrl } = useLocalSearchParams<{
-    conversationId: string;
+  const { userId, username, avatarUrl } = useLocalSearchParams<{
+    userId: string;
     username: string;
     avatarUrl: string;
   }>();
@@ -35,35 +34,28 @@ const ConversationScreen = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const data = await getMessages(conversationId);
+        const data = await getMessages(userId);
         setMessages(data);
       } catch (error) {
         console.error('Error fetching messages:', error);
       }
     };
-
-    if (conversationId) fetchMessages();
-  }, [conversationId]);
+    if (userId) fetchMessages();
+  }, [userId]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() === '') return;
-
     try {
-      await sendMessage(conversationId, newMessage);
-
+      await sendMessage(userId, newMessage);
       const newEntry = {
         id: Date.now(),
         text: newMessage,
         sender: 'me',
         timestamp: new Date().toISOString(),
       };
-
       setMessages((prev) => [...prev, newEntry]);
       setNewMessage('');
-
-      setTimeout(() => {
-        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-      }, 100);
+      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -71,9 +63,8 @@ const ConversationScreen = () => {
 
   const handleTyping = async (text: string) => {
     setNewMessage(text);
-
     try {
-      await sendTypingStatus(conversationId);
+      await sendTypingStatus(userId);
     } catch (error) {
       console.error('Failed to send typing status:', error);
     }
@@ -105,7 +96,6 @@ const ConversationScreen = () => {
               <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                 <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
               </TouchableOpacity>
-
               <Image
                 source={
                   avatarUrl
@@ -114,18 +104,15 @@ const ConversationScreen = () => {
                 }
                 style={styles.avatar}
               />
-
               <Text style={styles.headerTitle}>{username || 'User'}</Text>
             </View>
 
-            {/* Messages */}
+            {/* Chat */}
             <FlatList
               ref={flatListRef}
               data={[...messages].reverse()}
               renderItem={renderItem}
-              keyExtractor={(item) =>
-                item.id?.toString() || `${item.sender}-${item.timestamp}`
-              }
+              keyExtractor={(item) => item.id?.toString() || `${item.sender}-${item.timestamp}`}
               contentContainerStyle={styles.messagesContainer}
               inverted
               keyboardShouldPersistTaps="handled"
@@ -135,7 +122,6 @@ const ConversationScreen = () => {
             <View style={styles.inputWrapper}>
               <View style={styles.inputContainer}>
                 <MaterialCommunityIcons name="emoticon-outline" size={24} color="#aaa" />
-
                 <TextInput
                   value={newMessage}
                   onChangeText={handleTyping}
@@ -143,11 +129,9 @@ const ConversationScreen = () => {
                   placeholderTextColor="#999"
                   style={styles.input}
                 />
-
                 <MaterialCommunityIcons name="paperclip" size={24} color="#aaa" style={styles.icon} />
                 <MaterialCommunityIcons name="camera" size={24} color="#aaa" style={styles.icon} />
               </View>
-
               <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
                 <MaterialCommunityIcons name="send" size={24} color="#fff" />
               </TouchableOpacity>
