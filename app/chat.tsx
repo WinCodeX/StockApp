@@ -12,6 +12,7 @@ import {
   TouchableWithoutFeedback,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getMessages } from '../lib/helpers/getMessages';
@@ -82,38 +83,36 @@ const ConversationScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
-        </TouchableOpacity>
-        <Image
-          source={
-            avatarUrl
-              ? { uri: avatarUrl.toString() }
-              : require('../assets/images/avatar_placeholder.png')
-          }
-          style={styles.avatar}
-        />
-        <Text style={styles.headerTitle}>{username || 'User'}</Text>
-      </View>
-
-      {/* Chat Area with Keyboard Avoiding */}
+    <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
+        style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        style={styles.chatWrapper}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.flex}>
+          <View style={styles.inner}>
+            {/* Header */}
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
+              </TouchableOpacity>
+              <Image
+                source={
+                  avatarUrl
+                    ? { uri: avatarUrl.toString() }
+                    : require('../assets/images/avatar_placeholder.png')
+                }
+                style={styles.avatar}
+              />
+              <Text style={styles.headerTitle}>{username || 'User'}</Text>
+            </View>
+
+            {/* Chat */}
             <FlatList
               ref={flatListRef}
               data={[...messages].reverse()}
               renderItem={renderItem}
-              keyExtractor={(item) =>
-                item.id?.toString() || `${item.sender}-${item.timestamp}`
-              }
+              keyExtractor={(item) => item.id?.toString() || `${item.sender}-${item.timestamp}`}
               contentContainerStyle={styles.messagesContainer}
               inverted
               keyboardShouldPersistTaps="handled"
@@ -140,17 +139,21 @@ const ConversationScreen = () => {
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#1A1A1D',
   },
-  flex: {
+  container: {
     flex: 1,
+  },
+  inner: {
+    flex: 1,
+    justifyContent: 'space-between',
   },
   header: {
     flexDirection: 'row',
@@ -174,9 +177,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#bd93f9',
-  },
-  chatWrapper: {
-    flex: 1,
   },
   messagesContainer: {
     padding: 16,
