@@ -6,7 +6,7 @@ import api from '../api';
  */
 export const sendTypingStatus = async (receiverId: string) => {
   try {
-    await api.post('/typing_status', {
+    await api.post('/api/v1/typing_status', {
       receiver_id: receiverId,
     });
   } catch (error) {
