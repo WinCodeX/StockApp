@@ -31,13 +31,13 @@ const ConversationScreen = () => {
 
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     const loadUserId = async () => {
       const id = await SecureStore.getItemAsync('user_id');
-      if (id) setCurrentUserId(parseInt(id));
+      if (id) setCurrentUserId(id); // keep as string to match server format
     };
     loadUserId();
   }, []);
@@ -84,7 +84,7 @@ const ConversationScreen = () => {
   const renderItem = ({ item }) => {
     if (!item) return null;
 
-    const isMe = currentUserId && item.user_id === currentUserId;
+    const isMe = currentUserId && String(item.user_id) === String(currentUserId);
     const timestamp = item.created_at
       ? new Date(item.created_at).toLocaleTimeString([], {
           hour: '2-digit',
