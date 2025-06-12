@@ -1,3 +1,4 @@
+// unchanged imports
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -37,7 +38,7 @@ const ConversationScreen = () => {
   useEffect(() => {
     const loadUserId = async () => {
       const id = await SecureStore.getItemAsync('user_id');
-      if (id) setCurrentUserId(id); // keep as string to match server format
+      if (id) setCurrentUserId(id);
     };
     loadUserId();
   }, []);
@@ -84,7 +85,7 @@ const ConversationScreen = () => {
   const renderItem = ({ item }) => {
     if (!item) return null;
 
-    const isMe = currentUserId && String(item.user_id) === String(currentUserId);
+    const isMe = String(item.user_id) === String(currentUserId);
     const timestamp = item.created_at
       ? new Date(item.created_at).toLocaleTimeString([], {
           hour: '2-digit',
@@ -93,9 +94,11 @@ const ConversationScreen = () => {
       : '';
 
     return (
-      <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.otherMessage]}>
-        <Text style={styles.messageText}>{item.body || '...'}</Text>
-        <Text style={styles.timestamp}>{timestamp}</Text>
+      <View style={[styles.messageRow, isMe ? styles.myRow : styles.otherRow]}>
+        <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.otherMessage]}>
+          <Text style={styles.messageText}>{item.body || '...'}</Text>
+          <Text style={styles.timestamp}>{timestamp}</Text>
+        </View>
       </View>
     );
   };
@@ -130,7 +133,7 @@ const ConversationScreen = () => {
               ref={flatListRef}
               data={Array.isArray(messages) ? [...messages].reverse() : []}
               renderItem={renderItem}
-              keyExtractor={(item) => item.id?.toString() || `${item.user_id}-${item.created_at}`}
+              keyExtractor={(item) => `${item.id}-${item.created_at}`}
               contentContainerStyle={styles.messagesContainer}
               inverted
               keyboardShouldPersistTaps="handled"
@@ -197,22 +200,30 @@ const styles = StyleSheet.create({
     color: '#bd93f9',
   },
   messagesContainer: {
-    padding: 16,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+  },
+  messageRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  myRow: {
+    justifyContent: 'flex-end',
+  },
+  otherRow: {
+    justifyContent: 'flex-start',
   },
   messageBubble: {
     padding: 10,
     borderRadius: 18,
-    marginBottom: 10,
     maxWidth: '75%',
   },
   myMessage: {
-    alignSelf: 'flex-end',
     backgroundColor: '#25d366',
     borderTopLeftRadius: 18,
     borderTopRightRadius: 6,
   },
   otherMessage: {
-    alignSelf: 'flex-start',
     backgroundColor: '#2a2a3d',
     borderTopRightRadius: 18,
     borderTopLeftRadius: 6,
@@ -225,7 +236,7 @@ const styles = StyleSheet.create({
     color: '#bbb',
     fontSize: 12,
     textAlign: 'right',
-    marginTop: 5,
+    marginTop: 4,
   },
   inputWrapper: {
     flexDirection: 'row',
