@@ -58,9 +58,7 @@ const ConversationScreen = () => {
     if (newMessage.trim() === '') return;
     try {
       const msg = await sendMessage(conversationId, newMessage);
-
       const fallbackTimestamp = new Date().toISOString();
-
       const fixedMsg = {
         ...msg,
         created_at: msg.created_at || fallbackTimestamp,
@@ -95,7 +93,7 @@ const ConversationScreen = () => {
       : '';
 
     return (
-      <View style={isMe ? styles.myMessage : styles.otherMessage}>
+      <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.otherMessage]}>
         <Text style={styles.messageText}>{item.body || '...'}</Text>
         <Text style={styles.timestamp}>{timestamp}</Text>
       </View>
@@ -111,6 +109,7 @@ const ConversationScreen = () => {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.inner}>
+            {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                 <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
@@ -126,6 +125,7 @@ const ConversationScreen = () => {
               <Text style={styles.headerTitle}>{username || 'User'}</Text>
             </View>
 
+            {/* Messages */}
             <FlatList
               ref={flatListRef}
               data={Array.isArray(messages) ? [...messages].reverse() : []}
@@ -136,6 +136,7 @@ const ConversationScreen = () => {
               keyboardShouldPersistTaps="handled"
             />
 
+            {/* Input */}
             <View style={styles.inputWrapper}>
               <View style={styles.inputContainer}>
                 <MaterialCommunityIcons name="emoticon-outline" size={24} color="#aaa" />
@@ -198,27 +199,23 @@ const styles = StyleSheet.create({
   messagesContainer: {
     padding: 16,
   },
+  messageBubble: {
+    padding: 10,
+    borderRadius: 18,
+    marginBottom: 10,
+    maxWidth: '75%',
+  },
   myMessage: {
     alignSelf: 'flex-end',
     backgroundColor: '#25d366',
-    padding: 10,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 6,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    marginBottom: 10,
-    maxWidth: '75%',
   },
   otherMessage: {
     alignSelf: 'flex-start',
     backgroundColor: '#2a2a3d',
-    padding: 10,
     borderTopRightRadius: 18,
     borderTopLeftRadius: 6,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    marginBottom: 10,
-    maxWidth: '75%',
   },
   messageText: {
     color: '#fff',
