@@ -1,4 +1,3 @@
-// sendMessage.ts
 import api from '../api';
 import * as SecureStore from 'expo-secure-store';
 
@@ -12,7 +11,7 @@ const sendMessage = async (conversationId: string, content: string) => {
     const response = await api.post(
       `/api/v1/conversations/${conversationId}/messages`,
       {
-        message: { body: content }, // ✅ Must match Rails expected param
+        message: { body: content }, // ✅ Rails expects `body`, not `content`
       },
       {
         headers: {
@@ -22,7 +21,13 @@ const sendMessage = async (conversationId: string, content: string) => {
       }
     );
 
-    return response.data;
+    // ✅ FastJsonapi response structure: { data: { id, attributes: { body, created_at, user_id } } }
+    const { id, attributes } = response.data?.data;
+
+    return {
+      id,
+      ...attributes,
+    };
   } catch (error: any) {
     console.error('Error sending message:', error?.message || error);
     throw error;
