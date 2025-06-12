@@ -12,10 +12,12 @@ import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as SecureStore from 'expo-secure-store';
 
 import { getConversations } from '../lib/helpers/getConversations';
 import colors from '../theme/colors';
 import UserSearchModal from '../components/UserSearchModal';
+import api from '../lib/api';
 
 const ChatListScreen = () => {
   const router = useRouter();
@@ -44,25 +46,56 @@ const ChatListScreen = () => {
     }
   };
 
-  const handleConversationPress = (conversationId, username, avatarUrl) => {
-    router.push({
-      pathname: `/conversations/${conversationId}`,
-      params: { conversationId, username, avatarUrl },
-    });
+  const handleConversationPress = async (conversationId, username, avatarUrl, otherUserId) => {
+    try {
+      const token = await SecureStore.getItemAsync('auth_token');
+      if (!token) throw new Error('Authentication token missing');
+
+      const response = await api.post(
+        '/api/v1/conversations',
+        { receiver_id: otherUserId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        }
+      );
+
+      const convo = response.data?.data || response.data;
+
+      router.push({
+        pathname: '/chat',
+        params: {
+          conversationId: convo.id.toString(),
+          username,
+          avatarUrl: avatarUrl || '',
+        },
+      });
+    } catch (error) {
+      console.error('Failed to open conversation:', error);
+      Toast.show({
+        type: 'errorToast',
+        text1: 'Failed to open chat',
+      });
+    }
   };
 
   const renderItem = ({ item }) => {
-    const displayName =
-      item.receiver?.username || item.sender?.username || 'Unknown User';
+    const displayName = item.receiver?.username || item.sender?.username || 'Unknown User';
     const avatarUrl = item.receiver?.avatar_url || item.sender?.avatar_url;
+    const lastMessage = item.messages?.[0];
 
-    const lastMessage = item.messages?.[0]; // ✅ Pull latest message
+    const currentUserId = item.current_user_id;
+    const otherUserId = item.receiver?.id === currentUserId
+      ? item.sender?.id
+      : item.receiver?.id;
 
     return (
       <TouchableOpacity
         style={styles.chatItem}
         onPress={() =>
-          handleConversationPress(item.id, displayName, avatarUrl)
+          handleConversationPress(item.id, displayName, avatarUrl, otherUserId)
         }
       >
         <Image
