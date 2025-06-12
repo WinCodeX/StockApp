@@ -15,6 +15,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
+
 import { getMessages } from '../lib/helpers/getMessages';
 import { sendMessage } from '../lib/helpers/sendMessage';
 import { sendTypingStatus } from '../lib/helpers/sendTypingStatus';
@@ -29,7 +31,16 @@ const ConversationScreen = () => {
 
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    const loadUserId = async () => {
+      const id = await SecureStore.getItemAsync('user_id');
+      if (id) setCurrentUserId(parseInt(id));
+    };
+    loadUserId();
+  }, []);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -65,7 +76,7 @@ const ConversationScreen = () => {
   };
 
   const renderItem = ({ item }) => {
-    const isMe = item.user_id === parseInt(conversationId); // you might want to compare with currentUser.id instead
+    const isMe = currentUserId && item.user_id === currentUserId;
     return (
       <View style={isMe ? styles.myMessage : styles.otherMessage}>
         <Text style={styles.messageText}>{item.body}</Text>
@@ -104,7 +115,7 @@ const ConversationScreen = () => {
               <Text style={styles.headerTitle}>{username || 'User'}</Text>
             </View>
 
-            {/* Chat */}
+            {/* Chat Messages */}
             <FlatList
               ref={flatListRef}
               data={Array.isArray(messages) ? [...messages].reverse() : []}
@@ -115,7 +126,7 @@ const ConversationScreen = () => {
               keyboardShouldPersistTaps="handled"
             />
 
-            {/* Input */}
+            {/* Input Field */}
             <View style={styles.inputWrapper}>
               <View style={styles.inputContainer}>
                 <MaterialCommunityIcons name="emoticon-outline" size={24} color="#aaa" />
@@ -141,9 +152,17 @@ const ConversationScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#1A1A1D' },
-  container: { flex: 1 },
-  inner: { flex: 1, justifyContent: 'space-between' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#1A1A1D',
+  },
+  container: {
+    flex: 1,
+  },
+  inner: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -153,10 +172,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
-  backButton: { marginRight: 10 },
-  avatar: { width: 32, height: 32, borderRadius: 16, marginRight: 10 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#bd93f9' },
-  messagesContainer: { padding: 16 },
+  backButton: {
+    marginRight: 10,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#bd93f9',
+  },
+  messagesContainer: {
+    padding: 16,
+  },
   myMessage: {
     alignSelf: 'flex-end',
     backgroundColor: '#25d366',
@@ -179,7 +211,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     maxWidth: '75%',
   },
-  messageText: { color: '#fff', fontSize: 16 },
+  messageText: {
+    color: '#fff',
+    fontSize: 16,
+  },
   timestamp: {
     color: '#bbb',
     fontSize: 12,
@@ -209,7 +244,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     paddingHorizontal: 8,
   },
-  icon: { marginLeft: 6 },
+  icon: {
+    marginLeft: 6,
+  },
   sendButton: {
     marginLeft: 8,
     backgroundColor: '#bd93f9',
