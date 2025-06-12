@@ -12,8 +12,11 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+
 import colors from '../theme/colors';
 import { searchUsers } from '../lib/helpers/searchUsers';
+import api from '../lib/api'; // your configured axios instance
 
 interface User {
   id: number;
@@ -54,19 +57,39 @@ const UserSearchModal: React.FC<Props> = ({ visible, onClose }) => {
     return () => clearTimeout(delaySearch);
   }, [query]);
 
-  const handleSelectUser = (user: User) => {
-    router.push({
-      pathname: '/chat',
-      params: {
-        conversationId: user.id.toString(), // ✅ Changed from userId
-        username: user.username,
-        avatarUrl: user.avatar_url || '',
-      },
-    });
+  const handleSelectUser = async (user: User) => {
+    try {
+      const token = await SecureStore.getItemAsync('auth_token');
+      if (!token) throw new Error('Authentication token missing');
 
-    setQuery('');
-    setUsers([]);
-    onClose();
+      const response = await api.post(
+        '/api/v1/conversations',
+        { receiver_id: user.id },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        }
+      );
+
+      const conversationId = response.data.id;
+
+      router.push({
+        pathname: '/chat',
+        params: {
+          conversationId: conversationId.toString(),
+          username: user.username,
+          avatarUrl: user.avatar_url || '',
+        },
+      });
+
+      setQuery('');
+      setUsers([]);
+      onClose();
+    } catch (error) {
+      console.error('Failed to create or find conversation:', error);
+    }
   };
 
   return (
