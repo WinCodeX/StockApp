@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -43,31 +44,51 @@ const ChatListScreen = () => {
     }
   };
 
-  const handleConversationPress = (conversationId) => {
-    router.push(`/conversations/${conversationId}`);
+  const handleConversationPress = (conversationId, username, avatarUrl) => {
+    router.push({
+      pathname: `/conversations/${conversationId}`,
+      params: { conversationId, username, avatarUrl },
+    });
   };
 
   const renderItem = ({ item }) => {
-    const lastMsg = item.messages?.length > 0 ? item.messages[item.messages.length - 1] : null;
     const displayName =
       item.receiver?.username || item.sender?.username || 'Unknown User';
+    const avatarUrl = item.receiver?.avatar_url || item.sender?.avatar_url;
+    const lastMessage = item.lastMessage;
 
     return (
       <TouchableOpacity
-        style={styles.conversationItem}
-        onPress={() => handleConversationPress(item.id)}
+        style={styles.chatItem}
+        onPress={() =>
+          handleConversationPress(item.id, displayName, avatarUrl)
+        }
       >
-        <View style={styles.conversationDetails}>
-          <Text style={styles.conversationName}>{displayName}</Text>
-          <Text style={styles.lastMessage}>
-            {lastMsg?.body || 'No messages yet'}
+        <Image
+          source={
+            avatarUrl
+              ? { uri: avatarUrl }
+              : require('../assets/images/avatar_placeholder.png')
+          }
+          style={styles.avatar}
+        />
+
+        <View style={styles.chatContent}>
+          <View style={styles.chatHeader}>
+            <Text style={styles.nameText}>{displayName}</Text>
+            <Text style={styles.timestamp}>
+              {lastMessage?.created_at
+                ? new Date(lastMessage.created_at).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : ''}
+            </Text>
+          </View>
+          <Text numberOfLines={1} style={styles.lastMessage}>
+            {lastMessage?.body || 'No messages yet'}
           </Text>
         </View>
-        <Text style={styles.timestamp}>
-          {lastMsg?.created_at
-            ? new Date(lastMsg.created_at).toLocaleTimeString()
-            : ''}
-        </Text>
       </TouchableOpacity>
     );
   };
@@ -158,35 +179,42 @@ const styles = StyleSheet.create({
     padding: 16,
     textAlign: 'center',
   },
-  conversationItem: {
+  chatItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 14,
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
-    backgroundColor: colors.cardBackground || '#2a2a3d',
-    marginHorizontal: 8,
-    marginVertical: 4,
-    borderRadius: 8,
+    backgroundColor: colors.cardBackground || '#1a1a1a',
   },
-  conversationDetails: {
-    flex: 1,
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     marginRight: 12,
   },
-  conversationName: {
+  chatContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  chatHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  nameText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: colors.text || '#fff',
-    marginBottom: 4,
-  },
-  lastMessage: {
-    color: colors.textSecondary || '#bbb',
-    fontSize: 14,
   },
   timestamp: {
-    color: colors.textMuted || '#999',
     fontSize: 12,
-    alignSelf: 'center',
+    color: colors.textMuted || '#999',
+  },
+  lastMessage: {
+    fontSize: 14,
+    color: colors.textSecondary || '#bbb',
   },
   newConversationButton: {
     position: 'absolute',
