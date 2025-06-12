@@ -16,7 +16,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     setErrorMsg('');
     try {
-      const response = await api.post('/login', {
+      const response = await api.post('/api/vi/login', {
         user: { email, password },
       });
 
