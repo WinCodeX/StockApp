@@ -18,18 +18,23 @@ const getMessages = async (conversationId: string) => {
       }
     );
 
-    // FastJsonapi format: { data: [ { id, attributes: {...}, relationships: {...} } ] }
     const rawData = response.data?.data || [];
 
-    const messages = rawData.map((item) => ({
-      id: item.id,
-      ...item.attributes,
-      user: item.relationships?.user?.data || null, // optional: include user ref if needed
-    }));
+    const messages = rawData.map((item) => {
+      const attributes = item.attributes || {};
+      const userRelationship = item.relationships?.user?.data;
 
+      return {
+        id: item.id,
+        ...attributes,
+        user_id: attributes.user_id || (userRelationship ? userRelationship.id : null),
+      };
+    });
+
+    console.log('[getMessages] Parsed messages:', messages); // ✅ for debug
     return messages;
   } catch (error: any) {
-    console.error('Error fetching messages:', error?.message || error);
+    console.error('[getMessages] Error:', error?.message || error);
     throw error;
   }
 };
