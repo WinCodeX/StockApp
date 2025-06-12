@@ -27,11 +27,12 @@ const getMessages = async (conversationId: string) => {
       return {
         id: item.id,
         ...attributes,
-        user_id: attributes.user_id || (userRelationship ? userRelationship.id : null),
+        user_id: String(attributes.user_id || (userRelationship?.id || '')), // force string
       };
     });
 
-    console.log('[getMessages] Parsed messages:', messages); // ✅ for debug
+    console.log('[getMessages] Current User ID check:', await SecureStore.getItemAsync('user_id'));
+    console.log('[getMessages] Parsed messages:', messages); // ✅ debug
     return messages;
   } catch (error: any) {
     console.error('[getMessages] Error:', error?.message || error);
