@@ -1,4 +1,3 @@
-// getMessages.ts
 import api from '../api';
 import * as SecureStore from 'expo-secure-store';
 
@@ -14,12 +13,21 @@ const getMessages = async (conversationId: string) => {
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          Accept: 'application/json', // ✅ Important
+          Accept: 'application/json',
         },
       }
     );
 
-    return response.data;
+    // FastJsonapi format: { data: [ { id, attributes: {...}, relationships: {...} } ] }
+    const rawData = response.data?.data || [];
+
+    const messages = rawData.map((item) => ({
+      id: item.id,
+      ...item.attributes,
+      user: item.relationships?.user?.data || null, // optional: include user ref if needed
+    }));
+
+    return messages;
   } catch (error: any) {
     console.error('Error fetching messages:', error?.message || error);
     throw error;
