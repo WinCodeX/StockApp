@@ -82,14 +82,14 @@ const ChatListScreen = () => {
   };
 
   const renderItem = ({ item }) => {
-    const displayName = item.receiver?.username || item.sender?.username || 'Unknown User';
-    const avatarUrl = item.receiver?.avatar_url || item.sender?.avatar_url;
-    const lastMessage = item.messages?.[0];
-
     const currentUserId = item.current_user_id;
-    const otherUserId = item.receiver?.id === currentUserId
-      ? item.sender?.id
-      : item.receiver?.id;
+    const isSender = item.sender?.id === currentUserId;
+    const otherUser = isSender ? item.receiver : item.sender;
+
+    const displayName = otherUser?.username || 'Unknown User';
+    const avatarUrl = otherUser?.avatar_url || '';
+    const otherUserId = otherUser?.id;
+    const lastMessage = item.messages?.[0];
 
     return (
       <TouchableOpacity
