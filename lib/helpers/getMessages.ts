@@ -9,13 +9,19 @@ const getMessages = async (conversationId: string) => {
       throw new Error('No token found. Please login again.');
     }
 
-    const response = await api.get(`/api/v1/conversations/${conversationId}/messages`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await api.get(
+      `/api/v1/conversations/${conversationId}/messages`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json', // ✅ Important
+        },
+      }
+    );
 
     return response.data;
-  } catch (error) {
-    console.error('Error fetching messages:', error.message);
+  } catch (error: any) {
+    console.error('Error fetching messages:', error?.message || error);
     throw error;
   }
 };
