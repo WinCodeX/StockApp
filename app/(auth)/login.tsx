@@ -16,9 +16,16 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     setErrorMsg('');
     try {
-      const response = await api.post('/api/v1/login', {
-        user: { email, password },
-      });
+      const response = await api.post(
+  '/api/v1/login',
+  { user: { email, password } },
+  {
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+  }
+);
 
       const token = response?.data?.token;
       const userId =
