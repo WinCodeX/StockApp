@@ -47,33 +47,36 @@ const ChatListScreen = () => {
     router.push(`/conversations/${conversationId}`);
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.conversationItem}
-      onPress={() => handleConversationPress(item.id)}
-    >
-      <View style={styles.conversationDetails}>
-        <Text style={styles.conversationName}>{item.recipient.name}</Text>
-        <Text style={styles.lastMessage}>
-          {item.lastMessage?.content || 'No messages yet'}
+  const renderItem = ({ item }) => {
+    const lastMsg = item.messages?.length > 0 ? item.messages[item.messages.length - 1] : null;
+    const displayName =
+      item.receiver?.username || item.sender?.username || 'Unknown User';
+
+    return (
+      <TouchableOpacity
+        style={styles.conversationItem}
+        onPress={() => handleConversationPress(item.id)}
+      >
+        <View style={styles.conversationDetails}>
+          <Text style={styles.conversationName}>{displayName}</Text>
+          <Text style={styles.lastMessage}>
+            {lastMsg?.body || 'No messages yet'}
+          </Text>
+        </View>
+        <Text style={styles.timestamp}>
+          {lastMsg?.created_at
+            ? new Date(lastMsg.created_at).toLocaleTimeString()
+            : ''}
         </Text>
-      </View>
-      <Text style={styles.timestamp}>
-        {item.lastMessage?.createdAt
-          ? new Date(item.lastMessage.createdAt).toLocaleTimeString()
-          : ''}
-      </Text>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Custom Header */}
+      {/* Header */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons
             name="arrow-left"
             size={24}
@@ -85,10 +88,7 @@ const ChatListScreen = () => {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator
-            size="large"
-            color={colors.primary || '#bd93f9'}
-          />
+          <ActivityIndicator size="large" color={colors.primary || '#bd93f9'} />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
       ) : error ? (
@@ -102,7 +102,6 @@ const ChatListScreen = () => {
         />
       )}
 
-      {/* FAB to open user search */}
       <TouchableOpacity
         style={styles.newConversationButton}
         onPress={() => setShowSearchModal(true)}
@@ -110,7 +109,6 @@ const ChatListScreen = () => {
         <MaterialCommunityIcons name="message-plus" size={24} color="white" />
       </TouchableOpacity>
 
-      {/* Fixed component usage */}
       <UserSearchModal
         visible={showSearchModal}
         onClose={() => setShowSearchModal(false)}
