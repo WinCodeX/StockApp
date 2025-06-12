@@ -1,4 +1,3 @@
-// unchanged imports
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -12,15 +11,26 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
+import Toast from 'react-native-toast-message';
 
 import { getMessages } from '../lib/helpers/getMessages';
 import { sendMessage } from '../lib/helpers/sendMessage';
 import { sendTypingStatus } from '../lib/helpers/sendTypingStatus';
+
+interface Message {
+  id: number;
+  body: string;
+  user_id: number;
+  sender_id?: number;
+  created_at: string;
+  conversation_id: number;
+}
 
 const ConversationScreen = () => {
   const router = useRouter();
@@ -30,49 +40,98 @@ const ConversationScreen = () => {
     avatarUrl: string;
   };
 
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     const loadUserId = async () => {
-      const id = await SecureStore.getItemAsync('user_id');
-      if (id) setCurrentUserId(id);
+      try {
+        const id = await SecureStore.getItemAsync('user_id');
+        console.log('Stored user_id:', id); // Debug log
+        if (id) {
+          setCurrentUserId(parseInt(id, 10));
+        }
+      } catch (error) {
+        console.error('Error loading user ID:', error);
+      }
     };
     loadUserId();
   }, []);
 
   useEffect(() => {
     const fetchMessages = async () => {
+      if (!conversationId) return;
+      
       try {
+        setLoading(true);
         const data = await getMessages(conversationId);
-        setMessages(data);
+        console.log('Fetched messages:', data); // Debug log
+        console.log('Current user ID:', currentUserId); // Debug log
+        
+        // Validate and sort messages
+        const validMessages = Array.isArray(data) ? data.filter(msg => msg && msg.id) : [];
+        const sortedMessages = validMessages.sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+        
+        setMessages(sortedMessages);
       } catch (error) {
         console.error('Error fetching messages:', error);
+        Toast.show({
+          type: 'errorToast',
+          text1: 'Failed to load messages',
+          text2: 'Please try again',
+        });
+      } finally {
+        setLoading(false);
       }
     };
-    if (conversationId) fetchMessages();
-  }, [conversationId]);
+    
+    fetchMessages();
+  }, [conversationId, currentUserId]);
 
   const handleSendMessage = async () => {
-    if (newMessage.trim() === '') return;
+    if (newMessage.trim() === '' || sending) return;
+    
+    const messageText = newMessage.trim();
+    setNewMessage(''); // Clear input immediately for better UX
+    setSending(true);
+    
     try {
-      const msg = await sendMessage(conversationId, newMessage);
+      const msg = await sendMessage(conversationId, messageText);
+      console.log('Sent message response:', msg); // Debug log
+      
       const fallbackTimestamp = new Date().toISOString();
-      const fixedMsg = {
-        ...msg,
+      const fixedMsg: Message = {
+        id: msg.id || Date.now(), // Fallback ID
+        body: messageText,
+        user_id: currentUserId || msg.user_id,
         created_at: msg.created_at || fallbackTimestamp,
+        conversation_id: parseInt(conversationId),
+        ...msg, // Spread the actual response to override any defaults
       };
 
       setMessages((prev) => [...prev, fixedMsg]);
-      setNewMessage('');
+      
       // Scroll to bottom after sending message
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
+      
     } catch (error) {
       console.error('Error sending message:', error);
+      setNewMessage(messageText); // Restore message text on error
+      Toast.show({
+        type: 'errorToast',
+        text1: 'Failed to send message',
+        text2: 'Please try again',
+      });
+    } finally {
+      setSending(false);
     }
   };
 
@@ -85,10 +144,30 @@ const ConversationScreen = () => {
     }
   };
 
-  const renderItem = ({ item }) => {
-    if (!item) return null;
+  const renderItem = ({ item }: { item: Message }) => {
+    if (!item || !item.id) return null;
 
-    const isMe = String(item.user_id) === String(currentUserId);
+    // Debug logs to help identify the issue
+    console.log('Message item:', {
+      id: item.id,
+      user_id: item.user_id,
+      sender_id: item.sender_id,
+      currentUserId: currentUserId,
+      body: item.body?.substring(0, 20) + '...'
+    });
+
+    // Try multiple ways to determine if it's the current user's message
+    const messageUserId = item.user_id || item.sender_id;
+    const isMe = messageUserId === currentUserId || 
+                 String(messageUserId) === String(currentUserId);
+    
+    console.log('IsMe calculation:', {
+      messageUserId,
+      currentUserId,
+      isMe,
+      stringComparison: String(messageUserId) === String(currentUserId)
+    });
+
     const timestamp = item.created_at
       ? new Date(item.created_at).toLocaleTimeString([], {
           hour: '2-digit',
@@ -97,12 +176,20 @@ const ConversationScreen = () => {
       : '';
 
     return (
-      <View style={styles.messageContainer}>
+      <View style={[
+        styles.messageContainer,
+        isMe ? styles.myMessageContainer : styles.otherMessageContainer
+      ]}>
         <View style={[
           styles.messageBubble, 
           isMe ? styles.myMessage : styles.otherMessage
         ]}>
-          <Text style={styles.messageText}>{item.body || '...'}</Text>
+          <Text style={[
+            styles.messageText,
+            isMe ? styles.myMessageText : styles.otherMessageText
+          ]}>
+            {item.body || '...'}
+          </Text>
           <Text style={[
             styles.timestamp, 
             isMe ? styles.myTimestamp : styles.otherTimestamp
@@ -113,6 +200,18 @@ const ConversationScreen = () => {
       </View>
     );
   };
+
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <MaterialCommunityIcons 
+        name="message-outline" 
+        size={64} 
+        color="#666" 
+      />
+      <Text style={styles.emptyText}>No messages yet</Text>
+      <Text style={styles.emptySubtext}>Start the conversation!</Text>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -125,7 +224,11 @@ const ConversationScreen = () => {
           <View style={styles.inner}>
             {/* Header */}
             <View style={styles.header}>
-              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <TouchableOpacity 
+                onPress={() => router.back()} 
+                style={styles.backButton}
+                activeOpacity={0.7}
+              >
                 <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
               </TouchableOpacity>
               <Image
@@ -135,23 +238,50 @@ const ConversationScreen = () => {
                     : require('../assets/images/avatar_placeholder.png')
                 }
                 style={styles.avatar}
+                defaultSource={require('../assets/images/avatar_placeholder.png')}
               />
-              <Text style={styles.headerTitle}>{username || 'User'}</Text>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {username || 'User'}
+              </Text>
+              
+              {/* Debug info - remove this in production */}
+              <TouchableOpacity 
+                onPress={() => {
+                  Alert.alert('Debug Info', 
+                    `Current User ID: ${currentUserId}\n` +
+                    `Messages Count: ${messages.length}\n` +
+                    `Conversation ID: ${conversationId}`
+                  );
+                }}
+                style={styles.debugButton}
+              >
+                <MaterialCommunityIcons name="information" size={20} color="#bd93f9" />
+              </TouchableOpacity>
             </View>
 
             {/* Messages */}
             <FlatList
               ref={flatListRef}
-              data={Array.isArray(messages) ? messages : []}
+              data={messages}
               renderItem={renderItem}
               keyExtractor={(item) => `${item.id}-${item.created_at}`}
-              contentContainerStyle={styles.messagesContainer}
+              contentContainerStyle={[
+                styles.messagesContainer,
+                messages.length === 0 && styles.emptyMessagesContainer
+              ]}
+              ListEmptyComponent={!loading ? renderEmpty : null}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
               onContentSizeChange={() => {
-                // Auto scroll to bottom when new messages arrive
                 if (messages.length > 0) {
                   flatListRef.current?.scrollToEnd({ animated: true });
+                }
+              }}
+              onLayout={() => {
+                if (messages.length > 0) {
+                  setTimeout(() => {
+                    flatListRef.current?.scrollToEnd({ animated: false });
+                  }, 100);
                 }
               }}
             />
@@ -159,7 +289,9 @@ const ConversationScreen = () => {
             {/* Input */}
             <View style={styles.inputWrapper}>
               <View style={styles.inputContainer}>
-                <MaterialCommunityIcons name="emoticon-outline" size={24} color="#aaa" />
+                <TouchableOpacity activeOpacity={0.7}>
+                  <MaterialCommunityIcons name="emoticon-outline" size={24} color="#aaa" />
+                </TouchableOpacity>
                 <TextInput
                   value={newMessage}
                   onChangeText={handleTyping}
@@ -168,12 +300,29 @@ const ConversationScreen = () => {
                   style={styles.input}
                   multiline
                   maxLength={1000}
+                  editable={!sending}
                 />
-                <MaterialCommunityIcons name="paperclip" size={24} color="#aaa" style={styles.icon} />
-                <MaterialCommunityIcons name="camera" size={24} color="#aaa" style={styles.icon} />
+                <TouchableOpacity activeOpacity={0.7}>
+                  <MaterialCommunityIcons name="paperclip" size={24} color="#aaa" style={styles.icon} />
+                </TouchableOpacity>
+                <TouchableOpacity activeOpacity={0.7}>
+                  <MaterialCommunityIcons name="camera" size={24} color="#aaa" style={styles.icon} />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
-                <MaterialCommunityIcons name="send" size={24} color="#fff" />
+              <TouchableOpacity 
+                onPress={handleSendMessage} 
+                style={[
+                  styles.sendButton,
+                  (sending || newMessage.trim() === '') && styles.sendButtonDisabled
+                ]}
+                disabled={sending || newMessage.trim() === ''}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons 
+                  name={sending ? "loading" : "send"} 
+                  size={24} 
+                  color="#fff" 
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -206,26 +355,58 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 10,
+    padding: 4,
   },
   avatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
     marginRight: 10,
+    backgroundColor: '#333',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#bd93f9',
+    flex: 1,
+  },
+  debugButton: {
+    padding: 4,
+    marginLeft: 8,
   },
   messagesContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     flexGrow: 1,
   },
+  emptyMessagesContainer: {
+    flex: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+    fontWeight: '600',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 4,
+  },
   messageContainer: {
     marginVertical: 2,
     paddingHorizontal: 4,
+  },
+  myMessageContainer: {
+    alignItems: 'flex-end',
+  },
+  otherMessageContainer: {
+    alignItems: 'flex-start',
   },
   messageBubble: {
     padding: 12,
@@ -235,20 +416,23 @@ const styles = StyleSheet.create({
   },
   myMessage: {
     backgroundColor: '#25d366',
-    alignSelf: 'flex-end',
     borderTopRightRadius: 4,
-    marginLeft: '20%',
+    alignSelf: 'flex-end',
   },
   otherMessage: {
     backgroundColor: '#2a2a3d',
-    alignSelf: 'flex-start',
     borderTopLeftRadius: 4,
-    marginRight: '20%',
+    alignSelf: 'flex-start',
   },
   messageText: {
-    color: '#fff',
     fontSize: 16,
     lineHeight: 20,
+  },
+  myMessageText: {
+    color: '#fff',
+  },
+  otherMessageText: {
+    color: '#fff',
   },
   timestamp: {
     fontSize: 11,
@@ -304,6 +488,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 50,
     height: 50,
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#666',
   },
 });
 
