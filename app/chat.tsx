@@ -58,7 +58,15 @@ const ConversationScreen = () => {
     if (newMessage.trim() === '') return;
     try {
       const msg = await sendMessage(conversationId, newMessage);
-      setMessages((prev) => [...prev, msg]);
+
+      const fallbackTimestamp = new Date().toISOString();
+
+      const fixedMsg = {
+        ...msg,
+        created_at: msg.created_at || fallbackTimestamp,
+      };
+
+      setMessages((prev) => [...prev, fixedMsg]);
       setNewMessage('');
       setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
     } catch (error) {
@@ -76,16 +84,20 @@ const ConversationScreen = () => {
   };
 
   const renderItem = ({ item }) => {
+    if (!item) return null;
+
     const isMe = currentUserId && item.user_id === currentUserId;
+    const timestamp = item.created_at
+      ? new Date(item.created_at).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : '';
+
     return (
       <View style={isMe ? styles.myMessage : styles.otherMessage}>
-        <Text style={styles.messageText}>{item.body}</Text>
-        <Text style={styles.timestamp}>
-          {new Date(item.created_at).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </Text>
+        <Text style={styles.messageText}>{item.body || '...'}</Text>
+        <Text style={styles.timestamp}>{timestamp}</Text>
       </View>
     );
   };
@@ -99,7 +111,6 @@ const ConversationScreen = () => {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.inner}>
-            {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                 <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
@@ -115,7 +126,6 @@ const ConversationScreen = () => {
               <Text style={styles.headerTitle}>{username || 'User'}</Text>
             </View>
 
-            {/* Chat Messages */}
             <FlatList
               ref={flatListRef}
               data={Array.isArray(messages) ? [...messages].reverse() : []}
@@ -126,7 +136,6 @@ const ConversationScreen = () => {
               keyboardShouldPersistTaps="handled"
             />
 
-            {/* Input Field */}
             <View style={styles.inputWrapper}>
               <View style={styles.inputContainer}>
                 <MaterialCommunityIcons name="emoticon-outline" size={24} color="#aaa" />
