@@ -55,7 +55,8 @@ const ChatListScreen = () => {
     const displayName =
       item.receiver?.username || item.sender?.username || 'Unknown User';
     const avatarUrl = item.receiver?.avatar_url || item.sender?.avatar_url;
-    const lastMessage = item.lastMessage;
+
+    const lastMessage = item.messages?.[0]; // ✅ Pull latest message
 
     return (
       <TouchableOpacity
