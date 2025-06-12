@@ -91,6 +91,11 @@ const ChatListScreen = () => {
     const otherUserId = otherUser?.id;
     const lastMessage = item.messages?.[0];
 
+    const isCurrentUserSender = lastMessage?.user_id === currentUserId;
+    const messagePreview = lastMessage?.body
+      ? `${isCurrentUserSender ? 'You: ' : ''}${lastMessage.body}`
+      : 'No messages yet';
+
     return (
       <TouchableOpacity
         style={styles.chatItem}
@@ -120,7 +125,7 @@ const ChatListScreen = () => {
             </Text>
           </View>
           <Text numberOfLines={1} style={styles.lastMessage}>
-            {lastMessage?.body || 'No messages yet'}
+            {messagePreview}
           </Text>
         </View>
       </TouchableOpacity>
