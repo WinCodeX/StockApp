@@ -12,12 +12,12 @@ const sendMessage = async (conversationId: string, content: string) => {
     const response = await api.post(
       `/api/v1/conversations/${conversationId}/messages`,
       {
-        message: { content },
+        message: { body: content }, // ✅ Must match Rails expected param
       },
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          Accept: 'application/json', // ✅ Ensures Rails processes this as JSON
+          Accept: 'application/json',
         },
       }
     );
