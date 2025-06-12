@@ -67,7 +67,10 @@ const ConversationScreen = () => {
 
       setMessages((prev) => [...prev, fixedMsg]);
       setNewMessage('');
-      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
+      // Scroll to bottom after sending message
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -94,10 +97,18 @@ const ConversationScreen = () => {
       : '';
 
     return (
-      <View style={[styles.messageRow, isMe ? styles.myRow : styles.otherRow]}>
-        <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.otherMessage]}>
+      <View style={styles.messageContainer}>
+        <View style={[
+          styles.messageBubble, 
+          isMe ? styles.myMessage : styles.otherMessage
+        ]}>
           <Text style={styles.messageText}>{item.body || '...'}</Text>
-          <Text style={styles.timestamp}>{timestamp}</Text>
+          <Text style={[
+            styles.timestamp, 
+            isMe ? styles.myTimestamp : styles.otherTimestamp
+          ]}>
+            {timestamp}
+          </Text>
         </View>
       </View>
     );
@@ -131,12 +142,18 @@ const ConversationScreen = () => {
             {/* Messages */}
             <FlatList
               ref={flatListRef}
-              data={Array.isArray(messages) ? [...messages].reverse() : []}
+              data={Array.isArray(messages) ? messages : []}
               renderItem={renderItem}
               keyExtractor={(item) => `${item.id}-${item.created_at}`}
               contentContainerStyle={styles.messagesContainer}
-              inverted
               keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              onContentSizeChange={() => {
+                // Auto scroll to bottom when new messages arrive
+                if (messages.length > 0) {
+                  flatListRef.current?.scrollToEnd({ animated: true });
+                }
+              }}
             />
 
             {/* Input */}
@@ -149,6 +166,8 @@ const ConversationScreen = () => {
                   placeholder="Message"
                   placeholderTextColor="#999"
                   style={styles.input}
+                  multiline
+                  maxLength={1000}
                 />
                 <MaterialCommunityIcons name="paperclip" size={24} color="#aaa" style={styles.icon} />
                 <MaterialCommunityIcons name="camera" size={24} color="#aaa" style={styles.icon} />
@@ -200,75 +219,91 @@ const styles = StyleSheet.create({
     color: '#bd93f9',
   },
   messagesContainer: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    flexGrow: 1,
   },
-  messageRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  myRow: {
-    justifyContent: 'flex-end',
-  },
-  otherRow: {
-    justifyContent: 'flex-start',
+  messageContainer: {
+    marginVertical: 2,
+    paddingHorizontal: 4,
   },
   messageBubble: {
-    padding: 10,
+    padding: 12,
     borderRadius: 18,
-    maxWidth: '75%',
+    maxWidth: '80%',
+    minWidth: 60,
   },
   myMessage: {
     backgroundColor: '#25d366',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 6,
+    alignSelf: 'flex-end',
+    borderTopRightRadius: 4,
+    marginLeft: '20%',
   },
   otherMessage: {
     backgroundColor: '#2a2a3d',
-    borderTopRightRadius: 18,
-    borderTopLeftRadius: 6,
+    alignSelf: 'flex-start',
+    borderTopLeftRadius: 4,
+    marginRight: '20%',
   },
   messageText: {
     color: '#fff',
     fontSize: 16,
+    lineHeight: 20,
   },
   timestamp: {
-    color: '#bbb',
-    fontSize: 12,
-    textAlign: 'right',
+    fontSize: 11,
     marginTop: 4,
+    opacity: 0.7,
+  },
+  myTimestamp: {
+    color: '#fff',
+    textAlign: 'right',
+  },
+  otherTimestamp: {
+    color: '#bbb',
+    textAlign: 'left',
   },
   inputWrapper: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     paddingHorizontal: 8,
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-    paddingTop: 6,
+    paddingTop: 8,
     backgroundColor: '#1A1A1D',
+    borderTopWidth: 1,
+    borderTopColor: '#333',
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     backgroundColor: '#2a2a3d',
     flex: 1,
-    borderRadius: 30,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    minHeight: 40,
   },
   input: {
     flex: 1,
     fontSize: 16,
     color: '#fff',
     paddingHorizontal: 8,
+    paddingVertical: 0,
+    maxHeight: 100,
   },
   icon: {
-    marginLeft: 6,
+    marginLeft: 8,
+    marginBottom: 2,
   },
   sendButton: {
     marginLeft: 8,
     backgroundColor: '#bd93f9',
-    borderRadius: 28,
+    borderRadius: 25,
     padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 50,
+    height: 50,
   },
 });
 
