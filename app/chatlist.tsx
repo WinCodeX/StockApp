@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
-  RefreshControl,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,106 +22,45 @@ import api from '../lib/api';
 const ChatListScreen = () => {
   const router = useRouter();
   const [conversations, setConversations] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const abortControllerRef = useRef(null);
 
-  // Refresh conversations when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      fetchConversations();
-    }, [])
-  );
-
-  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+    const loadUserIdAndChats = async () => {
+      const id = await SecureStore.getItemAsync('user_id');
+      setCurrentUserId(id);
+      fetchConversations();
     };
+
+    loadUserIdAndChats();
   }, []);
 
-  const fetchConversations = async (isRefresh = false) => {
+  const fetchConversations = async () => {
+    setLoading(true);
     try {
-      // Cancel any existing request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      
-      abortControllerRef.current = new AbortController();
-      
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      
-      setError(null);
-      
       const data = await getConversations();
-      
-      // Validate data structure
-      if (!Array.isArray(data)) {
-        throw new Error('Invalid data format received');
-      }
-      
       setConversations(data);
     } catch (err) {
-      // Don't show error if request was aborted
-      if (err.name !== 'AbortError') {
-        const errorMessage = err.message || 'Failed to load conversations';
-        setError(errorMessage);
-        Toast.show({
-          type: 'errorToast',
-          text1: 'Error loading conversations',
-          text2: errorMessage,
-        });
-      }
+      setError('Failed to load conversations');
+      Toast.show({
+        type: 'errorToast',
+        text1: 'Error loading conversations',
+      });
     } finally {
       setLoading(false);
-      setRefreshing(false);
-      abortControllerRef.current = null;
     }
   };
 
-  const handleRefresh = () => {
-    fetchConversations(true);
-  };
-
-  const handleConversationPress = (conversationId, username, avatarUrl, otherUserId) => {
-    // Navigate directly with existing conversation data
-    router.push({
-      pathname: '/chat',
-      params: {
-        conversationId: conversationId.toString(),
-        username: username || 'Unknown User',
-        avatarUrl: avatarUrl || '',
-        userId: otherUserId?.toString() || '',
-      },
-    });
-  };
-
-  const handleNewConversation = async (user) => {
+  const handleConversationPress = async (conversationId, username, avatarUrl, otherUserId) => {
     try {
-      setShowSearchModal(false);
-      
       const token = await SecureStore.getItemAsync('auth_token');
-      if (!token) {
-        throw new Error('Authentication token missing');
-      }
-
-      // Show loading state
-      Toast.show({
-        type: 'info',
-        text1: 'Starting conversation...',
-      });
+      if (!token) throw new Error('Authentication token missing');
 
       const response = await api.post(
         '/api/v1/conversations',
-        { receiver_id: user.id },
+        { receiver_id: otherUserId },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -131,151 +69,82 @@ const ChatListScreen = () => {
         }
       );
 
-      const conversation = response.data?.data || response.data;
-      
-      if (!conversation?.id) {
-        throw new Error('Invalid conversation response');
-      }
+      const convo = response.data?.data || response.data;
 
-      // Navigate to the new conversation
       router.push({
         pathname: '/chat',
         params: {
-          conversationId: conversation.id.toString(),
-          username: user.username || 'Unknown User',
-          avatarUrl: user.avatar_url || '',
-          userId: user.id.toString(),
+          conversationId: convo.id.toString(),
+          username,
+          avatarUrl: avatarUrl || '',
         },
       });
-
-      // Refresh conversations list to include the new one
-      fetchConversations();
-      
     } catch (error) {
-      console.error('Failed to create conversation:', error);
+      console.error('Failed to open conversation:', error);
       Toast.show({
         type: 'errorToast',
-        text1: 'Failed to start conversation',
-        text2: error.message || 'Please try again',
+        text1: 'Failed to open chat',
       });
-    }
-  };
-
-  const formatTimestamp = (timestamp) => {
-    if (!timestamp) return '';
-    
-    try {
-      const date = new Date(timestamp);
-      const now = new Date();
-      const diffMs = now - date;
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 0) {
-        // Today - show time
-        return date.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        });
-      } else if (diffDays === 1) {
-        return 'Yesterday';
-      } else if (diffDays < 7) {
-        return date.toLocaleDateString([], { weekday: 'short' });
-      } else {
-        return date.toLocaleDateString([], { 
-          month: 'short', 
-          day: 'numeric' 
-        });
-      }
-    } catch (error) {
-      console.error('Error formatting timestamp:', error);
-      return '';
     }
   };
 
   const renderItem = ({ item }) => {
-    try {
-      const currentUserId = item.current_user_id;
-      const isSender = item.sender?.id === currentUserId;
-      const otherUser = isSender ? item.receiver : item.sender;
+    if (!currentUserId) return null;
 
-      // Validate required data
-      if (!otherUser?.id) {
-        console.warn('Invalid conversation item:', item);
-        return null;
-      }
+    const isSender = String(item.sender?.id) === String(currentUserId);
+    const otherUser = isSender ? item.receiver : item.sender;
 
-      const displayName = otherUser.username || 'Unknown User';
-      const avatarUrl = otherUser.avatar_url;
-      const otherUserId = otherUser.id;
-      const lastMessage = item.messages?.[0];
+    const displayName = otherUser?.username || 'Unknown User';
+    const avatarUrl = otherUser?.avatar_url || '';
+    const otherUserId = otherUser?.id;
+    const lastMessage = item.messages?.[0];
 
-      const isCurrentUserSender = lastMessage?.user_id === currentUserId;
-      const messagePreview = lastMessage?.body
-        ? `${isCurrentUserSender ? 'You: ' : ''}${lastMessage.body}`
-        : 'No messages yet';
+    const isCurrentUserSender = String(lastMessage?.user_id) === String(currentUserId);
+    const messagePreview = lastMessage?.body
+      ? `${isCurrentUserSender ? 'You: ' : ''}${lastMessage.body}`
+      : 'No messages yet';
 
-      return (
-        <TouchableOpacity
-          style={styles.chatItem}
-          onPress={() =>
-            handleConversationPress(item.id, displayName, avatarUrl, otherUserId)
+    return (
+      <TouchableOpacity
+        style={styles.chatItem}
+        onPress={() =>
+          handleConversationPress(item.id, displayName, avatarUrl, otherUserId)
+        }
+      >
+        <Image
+          source={
+            avatarUrl
+              ? { uri: avatarUrl }
+              : require('../assets/images/avatar_placeholder.png')
           }
-          activeOpacity={0.7}
-        >
-          <Image
-            source={
-              avatarUrl
-                ? { uri: avatarUrl }
-                : require('../assets/images/avatar_placeholder.png')
-            }
-            style={styles.avatar}
-            defaultSource={require('../assets/images/avatar_placeholder.png')}
-          />
+          style={styles.avatar}
+        />
 
-          <View style={styles.chatContent}>
-            <View style={styles.chatHeader}>
-              <Text style={styles.nameText} numberOfLines={1}>
-                {displayName}
-              </Text>
-              <Text style={styles.timestamp}>
-                {formatTimestamp(lastMessage?.created_at)}
-              </Text>
-            </View>
-            <Text numberOfLines={1} style={styles.lastMessage}>
-              {messagePreview}
+        <View style={styles.chatContent}>
+          <View style={styles.chatHeader}>
+            <Text style={styles.nameText}>{displayName}</Text>
+            <Text style={styles.timestamp}>
+              {lastMessage?.created_at
+                ? new Date(lastMessage.created_at).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : ''}
             </Text>
           </View>
-        </TouchableOpacity>
-      );
-    } catch (error) {
-      console.error('Error rendering conversation item:', error);
-      return null;
-    }
+          <Text numberOfLines={1} style={styles.lastMessage}>
+            {messagePreview}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
   };
-
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons 
-        name="message-outline" 
-        size={64} 
-        color={colors.textMuted || '#999'} 
-      />
-      <Text style={styles.emptyTitle}>No conversations yet</Text>
-      <Text style={styles.emptySubtitle}>
-        Start a new conversation by tapping the + button
-      </Text>
-    </View>
-  );
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
-          style={styles.backButton}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <MaterialCommunityIcons
             name="arrow-left"
             size={24}
@@ -285,52 +154,25 @@ const ChatListScreen = () => {
         <Text style={styles.headerTitle}>Conversations</Text>
       </View>
 
-      {loading && !refreshing ? (
+      {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary || '#bd93f9'} />
-          <Text style={styles.loadingText}>Loading conversations...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       ) : error ? (
-        <View style={styles.errorContainer}>
-          <MaterialCommunityIcons 
-            name="alert-circle-outline" 
-            size={48} 
-            color="#ff6b6b" 
-          />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton} 
-            onPress={() => fetchConversations()}
-          >
-            <Text style={styles.retryText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.errorText}>{error}</Text>
       ) : (
         <FlatList
           data={conversations}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-          contentContainerStyle={[
-            { paddingBottom: 120 },
-            conversations.length === 0 && { flex: 1 }
-          ]}
-          ListEmptyComponent={renderEmptyState}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[colors.primary || '#bd93f9']}
-              tintColor={colors.primary || '#bd93f9'}
-            />
-          }
-          showsVerticalScrollIndicator={false}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{ paddingBottom: 120 }}
         />
       )}
 
       <TouchableOpacity
         style={styles.newConversationButton}
         onPress={() => setShowSearchModal(true)}
-        activeOpacity={0.8}
       >
         <MaterialCommunityIcons name="message-plus" size={24} color="white" />
       </TouchableOpacity>
@@ -338,7 +180,10 @@ const ChatListScreen = () => {
       <UserSearchModal
         visible={showSearchModal}
         onClose={() => setShowSearchModal(false)}
-        onUserSelect={handleNewConversation}
+        onUserSelect={(user) => {
+          setShowSearchModal(false);
+          router.push(`/chat?chatId=${user.id}`);
+        }}
       />
     </SafeAreaView>
   );
@@ -361,7 +206,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 10,
-    padding: 4, // Increase touch target
   },
   headerTitle: {
     fontSize: 22,
@@ -376,50 +220,11 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 8,
     color: colors.text || '#fff',
-    fontSize: 16,
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
   },
   errorText: {
     color: '#ff6b6b',
-    fontSize: 16,
+    padding: 16,
     textAlign: 'center',
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  retryButton: {
-    backgroundColor: colors.primary || '#bd93f9',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text || '#fff',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: colors.textMuted || '#999',
-    textAlign: 'center',
-    lineHeight: 22,
   },
   chatItem: {
     flexDirection: 'row',
@@ -427,7 +232,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border || '#333',
+    borderBottomColor: '#333',
     backgroundColor: colors.cardBackground || '#1a1a1a',
   },
   avatar: {
@@ -435,7 +240,6 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     marginRight: 12,
-    backgroundColor: colors.border || '#333', // Fallback background
   },
   chatContent: {
     flex: 1,
@@ -444,15 +248,12 @@ const styles = StyleSheet.create({
   chatHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 2,
   },
   nameText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: colors.text || '#fff',
-    flex: 1,
-    marginRight: 8,
   },
   timestamp: {
     fontSize: 12,
