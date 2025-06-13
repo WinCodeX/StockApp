@@ -27,12 +27,31 @@ const ChatListScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const abortControllerRef = useRef(null);
 
-  // Refresh conversations when screen comes into focus
+  // Get current user ID from SecureStore
+  const getCurrentUserId = async () => {
+    try {
+      const userId = await SecureStore.getItemAsync('user_id');
+      if (userId) {
+        setCurrentUserId(parseInt(userId, 10));
+      } else {
+        console.warn('No user ID found in SecureStore');
+      }
+    } catch (error) {
+      console.error('Error getting current user ID:', error);
+    }
+  };
+
+  // Initialize current user ID and fetch conversations when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchConversations();
+      const initializeScreen = async () => {
+        await getCurrentUserId();
+        fetchConversations();
+      };
+      initializeScreen();
     }, [])
   );
 
@@ -51,7 +70,7 @@ const ChatListScreen = () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      
+
       abortControllerRef.current = new AbortController();
       
       if (isRefresh) {
@@ -108,7 +127,7 @@ const ChatListScreen = () => {
   const handleNewConversation = async (user) => {
     try {
       setShowSearchModal(false);
-      
+
       const token = await SecureStore.getItemAsync('auth_token');
       if (!token) {
         throw new Error('Authentication token missing');
@@ -163,7 +182,7 @@ const ChatListScreen = () => {
 
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
-    
+
     try {
       const date = new Date(timestamp);
       const now = new Date();
@@ -194,25 +213,35 @@ const ChatListScreen = () => {
 
   const renderItem = ({ item }) => {
     try {
-      const currentUserId = item.current_user_id;
-      const isSender = item.sender?.id === currentUserId;
-      const otherUser = isSender ? item.receiver : item.sender;
-
-      // Validate required data
-      if (!otherUser?.id) {
-        console.warn('Invalid conversation item:', item);
+      // Use currentUserId from state instead of item.current_user_id
+      if (!currentUserId) {
+        console.warn('Current user ID not available');
         return null;
       }
 
-      const displayName = otherUser.username || 'Unknown User';
-      const avatarUrl = otherUser.avatar_url;
-      const otherUserId = otherUser.id;
-      const lastMessage = item.messages?.[0];
+      // Determine who is the other user
+      const otherUser = item.sender?.id === currentUserId ? item.receiver : item.sender;
 
-      const isCurrentUserSender = lastMessage?.user_id === currentUserId;
-      const messagePreview = lastMessage?.body
-        ? `${isCurrentUserSender ? 'You: ' : ''}${lastMessage.body}`
-        : 'No messages yet';
+      // Validate required data
+      if (!otherUser?.id) {
+        console.warn('Invalid conversation item - no other user found:', item);
+        return null;
+      }
+
+      const displayName = otherUser.username || otherUser.name || 'Unknown User';
+      const avatarUrl = otherUser.avatar_url || otherUser.profile_picture;
+      const otherUserId = otherUser.id;
+      const lastMessage = item.messages?.[0] || item.last_message;
+
+      // Determine if the last message was sent by current user
+      const isCurrentUserSender = lastMessage?.user_id === currentUserId || 
+                                  lastMessage?.sender_id === currentUserId;
+      
+      let messagePreview = 'No messages yet';
+      if (lastMessage?.body || lastMessage?.content) {
+        const messageText = lastMessage.body || lastMessage.content;
+        messagePreview = isCurrentUserSender ? `You: ${messageText}` : messageText;
+      }
 
       return (
         <TouchableOpacity
@@ -238,7 +267,7 @@ const ChatListScreen = () => {
                 {displayName}
               </Text>
               <Text style={styles.timestamp}>
-                {formatTimestamp(lastMessage?.created_at)}
+                {formatTimestamp(lastMessage?.created_at || lastMessage?.timestamp)}
               </Text>
             </View>
             <Text numberOfLines={1} style={styles.lastMessage}>
@@ -255,10 +284,10 @@ const ChatListScreen = () => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons 
-        name="message-outline" 
-        size={64} 
-        color={colors.textMuted || '#999'} 
+      <MaterialCommunityIcons
+        name="message-outline"
+        size={64}
+        color={colors.textMuted || '#999'}
       />
       <Text style={styles.emptyTitle}>No conversations yet</Text>
       <Text style={styles.emptySubtitle}>
@@ -267,12 +296,34 @@ const ChatListScreen = () => {
     </View>
   );
 
+  // Don't render anything if currentUserId is not loaded yet
+  if (!currentUserId && !loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <MaterialCommunityIcons 
+            name="account-alert-outline" 
+            size={48} 
+            color="#ff6b6b" 
+          />
+          <Text style={styles.errorText}>Unable to load user information</Text>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={getCurrentUserId}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
+        <TouchableOpacity
+          onPress={() => router.back()}
           style={styles.backButton}
           activeOpacity={0.7}
         >
