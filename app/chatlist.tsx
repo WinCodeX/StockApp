@@ -160,7 +160,7 @@ const ConversationScreen = () => {
     <View style={styles.emptyContainer}>
       <MaterialCommunityIcons name="message-outline" size={64} color="#666" />
       <Text style={styles.emptyText}>No messages yet</Text>
-      <Text style={styles.emptySubtext}>Start a new chat by pressing the + Button</Text>
+      <Text style={styles.emptySubtext}>Start the conversation!</Text>
     </View>
   );
 
