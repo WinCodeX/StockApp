@@ -22,12 +22,19 @@ import api from '../lib/api';
 const ChatListScreen = () => {
   const router = useRouter();
   const [conversations, setConversations] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
   useEffect(() => {
-    fetchConversations();
+    const loadUserIdAndChats = async () => {
+      const id = await SecureStore.getItemAsync('user_id');
+      setCurrentUserId(id);
+      fetchConversations();
+    };
+
+    loadUserIdAndChats();
   }, []);
 
   const fetchConversations = async () => {
@@ -82,8 +89,9 @@ const ChatListScreen = () => {
   };
 
   const renderItem = ({ item }) => {
-    const currentUserId = item.current_user_id;
-    const isSender = item.sender?.id === currentUserId;
+    if (!currentUserId) return null;
+
+    const isSender = String(item.sender?.id) === String(currentUserId);
     const otherUser = isSender ? item.receiver : item.sender;
 
     const displayName = otherUser?.username || 'Unknown User';
@@ -91,7 +99,7 @@ const ChatListScreen = () => {
     const otherUserId = otherUser?.id;
     const lastMessage = item.messages?.[0];
 
-    const isCurrentUserSender = lastMessage?.user_id === currentUserId;
+    const isCurrentUserSender = String(lastMessage?.user_id) === String(currentUserId);
     const messagePreview = lastMessage?.body
       ? `${isCurrentUserSender ? 'You: ' : ''}${lastMessage.body}`
       : 'No messages yet';
