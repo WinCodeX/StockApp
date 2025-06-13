@@ -51,7 +51,6 @@ const ConversationScreen = () => {
     const loadUserId = async () => {
       try {
         const id = await SecureStore.getItemAsync('user_id');
-        console.log('Stored user_id:', id); // Debug log
         if (id) {
           setCurrentUserId(parseInt(id, 10));
         }
@@ -65,19 +64,14 @@ const ConversationScreen = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       if (!conversationId) return;
-      
+
       try {
         setLoading(true);
         const data = await getMessages(conversationId);
-        console.log('Fetched messages:', data); // Debug log
-        console.log('Current user ID:', currentUserId); // Debug log
-        
-        // Validate and sort messages
         const validMessages = Array.isArray(data) ? data.filter(msg => msg && msg.id) : [];
-        const sortedMessages = validMessages.sort((a, b) => 
+        const sortedMessages = validMessages.sort((a, b) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
-        
         setMessages(sortedMessages);
       } catch (error) {
         console.error('Error fetching messages:', error);
@@ -90,41 +84,34 @@ const ConversationScreen = () => {
         setLoading(false);
       }
     };
-    
+
     fetchMessages();
   }, [conversationId, currentUserId]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() === '' || sending) return;
-    
     const messageText = newMessage.trim();
-    setNewMessage(''); // Clear input immediately for better UX
+    setNewMessage('');
     setSending(true);
-    
+
     try {
       const msg = await sendMessage(conversationId, messageText);
-      console.log('Sent message response:', msg); // Debug log
-      
       const fallbackTimestamp = new Date().toISOString();
       const fixedMsg: Message = {
-        id: msg.id || Date.now(), // Fallback ID
+        id: msg.id || Date.now(),
         body: messageText,
         user_id: currentUserId || msg.user_id,
         created_at: msg.created_at || fallbackTimestamp,
         conversation_id: parseInt(conversationId),
-        ...msg, // Spread the actual response to override any defaults
+        ...msg,
       };
-
       setMessages((prev) => [...prev, fixedMsg]);
-      
-      // Scroll to bottom after sending message
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
-      
     } catch (error) {
       console.error('Error sending message:', error);
-      setNewMessage(messageText); // Restore message text on error
+      setNewMessage(messageText);
       Toast.show({
         type: 'errorToast',
         text1: 'Failed to send message',
@@ -146,54 +133,22 @@ const ConversationScreen = () => {
 
   const renderItem = ({ item }: { item: Message }) => {
     if (!item || !item.id) return null;
-
-    // Debug logs to help identify the issue
-    console.log('Message item:', {
-      id: item.id,
-      user_id: item.user_id,
-      sender_id: item.sender_id,
-      currentUserId: currentUserId,
-      body: item.body?.substring(0, 20) + '...'
-    });
-
-    // Try multiple ways to determine if it's the current user's message
     const messageUserId = item.user_id || item.sender_id;
-    const isMe = messageUserId === currentUserId || 
-                 String(messageUserId) === String(currentUserId);
-    
-    console.log('IsMe calculation:', {
-      messageUserId,
-      currentUserId,
-      isMe,
-      stringComparison: String(messageUserId) === String(currentUserId)
-    });
-
+    const isMe = String(messageUserId) === String(currentUserId);
     const timestamp = item.created_at
       ? new Date(item.created_at).toLocaleTimeString([], {
           hour: '2-digit',
-          minute: '2-digit',
+          minute: '2-digit'
         })
       : '';
 
     return (
-      <View style={[
-        styles.messageContainer,
-        isMe ? styles.myMessageContainer : styles.otherMessageContainer
-      ]}>
-        <View style={[
-          styles.messageBubble, 
-          isMe ? styles.myMessage : styles.otherMessage
-        ]}>
-          <Text style={[
-            styles.messageText,
-            isMe ? styles.myMessageText : styles.otherMessageText
-          ]}>
+      <View style={[styles.messageContainer, isMe ? styles.myMessageContainer : styles.otherMessageContainer]}>
+        <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.otherMessage]}>
+          <Text style={[styles.messageText, isMe ? styles.myMessageText : styles.otherMessageText]}>
             {item.body || '...'}
           </Text>
-          <Text style={[
-            styles.timestamp, 
-            isMe ? styles.myTimestamp : styles.otherTimestamp
-          ]}>
+          <Text style={[styles.timestamp, isMe ? styles.myTimestamp : styles.otherTimestamp]}>
             {timestamp}
           </Text>
         </View>
@@ -203,13 +158,9 @@ const ConversationScreen = () => {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons 
-        name="message-outline" 
-        size={64} 
-        color="#666" 
-      />
+      <MaterialCommunityIcons name="message-outline" size={64} color="#666" />
       <Text style={styles.emptyText}>No messages yet</Text>
-      <Text style={styles.emptySubtext}>Start the conversation!</Text>
+      <Text style={styles.emptySubtext}>Start a new chat by pressing the + Button</Text>
     </View>
   );
 
@@ -218,57 +169,33 @@ const ConversationScreen = () => {
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.inner}>
-            {/* Header */}
             <View style={styles.header}>
-              <TouchableOpacity 
-                onPress={() => router.back()} 
-                style={styles.backButton}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity onPress={() => router.back()} style={styles.backButton} activeOpacity={0.7}>
                 <MaterialCommunityIcons name="arrow-left" size={24} color="#bd93f9" />
               </TouchableOpacity>
               <Image
-                source={
-                  avatarUrl
-                    ? { uri: avatarUrl.toString() }
-                    : require('../assets/images/avatar_placeholder.png')
-                }
+                source={avatarUrl ? { uri: avatarUrl.toString() } : require('../assets/images/avatar_placeholder.png')}
                 style={styles.avatar}
-                defaultSource={require('../assets/images/avatar_placeholder.png')}
               />
-              <Text style={styles.headerTitle} numberOfLines={1}>
-                {username || 'User'}
-              </Text>
-              
-              {/* Debug info - remove this in production */}
-              <TouchableOpacity 
+              <Text style={styles.headerTitle} numberOfLines={1}>{username || 'User'}</Text>
+              <TouchableOpacity
                 onPress={() => {
-                  Alert.alert('Debug Info', 
-                    `Current User ID: ${currentUserId}\n` +
-                    `Messages Count: ${messages.length}\n` +
-                    `Conversation ID: ${conversationId}`
-                  );
+                  Alert.alert('Debug Info', `Current User ID: ${currentUserId}\nMessages Count: ${messages.length}\nConversation ID: ${conversationId}`);
                 }}
-                style={styles.debugButton}
-              >
+                style={styles.debugButton}>
                 <MaterialCommunityIcons name="information" size={20} color="#bd93f9" />
               </TouchableOpacity>
             </View>
 
-            {/* Messages */}
             <FlatList
               ref={flatListRef}
               data={messages}
               renderItem={renderItem}
               keyExtractor={(item) => `${item.id}-${item.created_at}`}
-              contentContainerStyle={[
-                styles.messagesContainer,
-                messages.length === 0 && styles.emptyMessagesContainer
-              ]}
+              contentContainerStyle={[styles.messagesContainer, messages.length === 0 && styles.emptyMessagesContainer]}
               ListEmptyComponent={!loading ? renderEmpty : null}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
@@ -286,7 +213,6 @@ const ConversationScreen = () => {
               }}
             />
 
-            {/* Input */}
             <View style={styles.inputWrapper}>
               <View style={styles.inputContainer}>
                 <TouchableOpacity activeOpacity={0.7}>
@@ -309,20 +235,12 @@ const ConversationScreen = () => {
                   <MaterialCommunityIcons name="camera" size={24} color="#aaa" style={styles.icon} />
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity 
-                onPress={handleSendMessage} 
-                style={[
-                  styles.sendButton,
-                  (sending || newMessage.trim() === '') && styles.sendButtonDisabled
-                ]}
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                style={[styles.sendButton, (sending || newMessage.trim() === '') && styles.sendButtonDisabled]}
                 disabled={sending || newMessage.trim() === ''}
-                activeOpacity={0.8}
-              >
-                <MaterialCommunityIcons 
-                  name={sending ? "loading" : "send"} 
-                  size={24} 
-                  color="#fff" 
-                />
+                activeOpacity={0.8}>
+                <MaterialCommunityIcons name={sending ? 'loading' : 'send'} size={24} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>
